@@ -1,0 +1,245 @@
+import React, { ChangeEvent, useCallback, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import styled, { keyframes } from 'styled-components';
+import { toast } from 'react-toastify';
+import { CloseIcon } from '@components/Icons';
+import Button from '@styles/Button';
+import useInput from '@hooks/useInput';
+import { StyledComponentProps } from '@styles/StyledComponentProps.ts';
+import type { RootDispatch, RootState } from '@redux-store.ts';
+import { ChannelState, ChannelStateStatus } from '@models/channel.ts';
+import { updateChannel, uploadChannelAvatar } from '@reducers';
+import LabelNestingInput from '@components/input/LabelNestingInput.tsx';
+import LabelNestingTextArea from '@components/input/LabelNestingTextArea';
+
+const openModal = keyframes`
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+`;
+
+const Wrapper = styled.div<StyledComponentProps>`
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 900;
+    background: rgba(0, 0, 0, 0.7);
+    animation: ${openModal} 0.5s ease-in-out;
+
+    .edit-profile {
+        width: 600px;
+        border-radius: 4px;
+        background: ${(props) => props.theme.grey};
+        margin: 36px auto;
+        box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.4), 0px 0px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    .edit-profile img {
+        object-fit: cover;
+    }
+
+    div.modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        border-bottom: 1px solid ${(props) => props.theme.darkGrey};
+    }
+
+    h3 {
+        display: flex;
+        align-items: center;
+    }
+
+    form {
+        padding: 1rem;
+    }
+
+    input,
+    textarea {
+        width: 100%;
+        background: ${(props) => props.theme.black};
+        border: 1px solid ${(props) => props.theme.black};
+        margin-bottom: 1rem;
+        padding: 0.6rem 1rem;
+        border-radius: 3px;
+        color: ${(props) => props.theme.primaryColor};
+    }
+
+    textarea {
+        height: 75px;
+    }
+
+    svg {
+        fill: ${(props) => props.theme.red};
+        height: 22px;
+        width: 22px;
+        margin-right: 1rem;
+        position: relative;
+        top: -1px;
+    }
+
+    @media screen and (max-width: 600px) {
+        .edit-profile {
+            width: 90%;
+            margin: 4rem auto;
+        }
+    }
+
+    @media screen and (max-width: 400px) {
+        background: rgba(0, 0, 0, 0.9);
+    }
+`;
+
+const EditChannelModal = ({ closeModal }) => {
+  const dispatch = useDispatch<RootDispatch>();
+  const { status, data: channel } = useSelector<RootState, ChannelState>((state) => state.channel);
+
+  const name = useInput(channel.name);
+  const pathname = useInput(channel.pathname);
+  const description = useInput(channel.description || '');
+
+  // uploaded avatar, cover
+  // const [cover, setCover] = useState('');
+  // const [avatar, setAvatar] = useState('');
+
+  /*  // handlers for image upload
+    const handleCoverUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files[0];
+
+      if (file) {
+        setCover(await upload('image', file));
+      }
+    };*/
+
+  const handleAvatarUpload = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files[0];
+
+    if (file) {
+      dispatch(uploadChannelAvatar(file));
+    }
+  }, [dispatch]);
+
+  const handleEditProfile = useCallback(() => {
+    if (!name.value.trim()) {
+      return toast.error('name should not be empty');
+    }
+
+    dispatch(updateChannel({
+      // id: channel.id,
+      // data: {
+      name: name.value,
+      pathname: pathname.value,
+      description: description.value,
+      // },
+    }));
+  }, [description.value, name.value, pathname.value, dispatch]);
+
+  useEffect(() => {
+    if (status == ChannelStateStatus.IS_UPDATING) {
+      console.log('is updating. Should show a loading icon.');
+    } else if (status == ChannelStateStatus.UPDATE_SUCCEEDED) {
+      closeModal();
+    } else if (status == ChannelStateStatus.UPDATE_FAILED) {
+      console.error('update fails');
+    }
+  }, [closeModal, status]);
+
+  return (
+    <Wrapper>
+      <div className="container"></div>
+      <div className="edit-profile">
+        <div className="modal-header">
+          <h3>
+            <CloseIcon onClick={() => closeModal()} />
+            <span>Edit Profile</span>
+          </h3>
+          <Button onClick={handleEditProfile}>Save</Button>
+        </div>
+
+        {/*<div className="cover-upload-container ">*/}
+        {/*  <label htmlFor="cover-upload">*/}
+        {/*    {(cover ?? channel.cover) ? (*/}
+        {/*      <img*/}
+        {/*        className="pointer"*/}
+        {/*        width="100%"*/}
+        {/*        height="200px"*/}
+        {/*        src={cover ?? channel.cover}*/}
+        {/*        alt="cover"*/}
+        {/*      />*/}
+        {/*    ) : <Button>Upload cover</Button>}*/}
+        {/*  </label>*/}
+        {/*  <input*/}
+        {/*    id="cover-upload"*/}
+        {/*    type="file"*/}
+        {/*    accept="image/*"*/}
+        {/*    onChange={handleCoverUpload}*/}
+        {/*    style={{ display: 'none' }}*/}
+        {/*  />*/}
+        {/*</div>*/}
+
+        <form>
+          <div className="flex mb-2 items-center space-x-2">
+            <div className="avatar-upload-icon w-1/6 h-20">
+              <label htmlFor="block w-full h-full avatar-upload">
+                {(channel.avatar) ? (
+                  <img
+                    src={channel.avatar}
+                    className="pointer w-full aspect-square rounded-full"
+                    alt="avatar"
+                  />
+                ) : <div>Upload avatar</div>}
+              </label>
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+            </div>
+            <LabelNestingInput
+              label={"Channel name (required)"}
+              type="text"
+              placeholder="Channel name"
+              value={name.value}
+              onChange={name.onChange}
+              // className="my-auto"
+            />
+          </div>
+          {/*<label htmlFor="pathname">Pathname (optional): </label>*/}
+          {/*<input*/}
+          {/*  type="text"*/}
+          {/*  name="pathname"*/}
+          {/*  placeholder="pathname"*/}
+          {/*  value={pathname.value}*/}
+          {/*  onChange={pathname.onChange}*/}
+          {/*/>*/}
+          <LabelNestingInput
+            label="Pathname"
+            type="text"
+            value={pathname.value}
+            required
+            onChange={pathname.onChange}
+          />
+
+          {/*<label htmlFor="description">Description: </label>*/}
+          <LabelNestingTextArea
+            label="Description"
+            placeholder="Tell viewers about your channel"
+            value={description.value}
+            onChange={description.onChange}
+            // className="h-30"
+          />
+        </form>
+      </div>
+    </Wrapper>
+  );
+};
+
+export default EditChannelModal;

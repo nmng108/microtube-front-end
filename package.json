@@ -1,0 +1,77 @@
+{
+  "name": "microtube-front-end",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "author": {
+    "name": "Nam Nguyen",
+    "email": "namng.108@gmail.com"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "format": "prettier --check .",
+    "prepare": "husky",
+    "preview": "vite preview"
+  },
+  "packageManager": "yarn@4.5.0",
+  "dependencies": {
+    "@emotion/react": "^11.13.3",
+    "@emotion/styled": "^11.13.0",
+    "@floating-ui/dom": "^1.6.11",
+    "@mui/icons-material": "^6.1.6",
+    "@mui/material": "^6.1.6",
+    "@reduxjs/toolkit": "^2.6.1",
+    "apisauce": "^3.0.1",
+    "axios": "^1.8.4",
+    "env-var": "^7.5.0",
+    "framer-motion": "^12.6.5",
+    "hls.js": "^1.6.1",
+    "lucide-react": "^0.487.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-redux": "^9.2.0",
+    "react-router": "^7.5.0",
+    "react-toastify": "^11.0.5",
+    "redux": "^5.0.1",
+    "styled-components": "^6.1.17",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.0",
+    "@types/node": "^22.10.1",
+    "@types/peerjs": "^1.1.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react-swc": "^3.5.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.9.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-import-resolver-node": "^0.3.9",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jsdoc": "^50.4.3",
+    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "eslint-plugin-react-refresh": "^0.4.9",
+    "globals": "^15.9.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "postcss": "^8.4.47",
+    "prettier": "3.3.3",
+    "prettier-plugin-tailwindcss": "^0.6.8",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.5.3",
+    "typescript-eslint": "^8.0.1",
+    "vite": "6.2.5",
+    "vite-tsconfig-paths": "^5.1.4"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "yarn eslint --fix",
+      "yarn prettier --list-different --write"
+    ]
+  }
+}

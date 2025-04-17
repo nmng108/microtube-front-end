@@ -1,0 +1,3 @@
+yarn lint-staged
+# Ensure the project is buildable before committing
+yarn build

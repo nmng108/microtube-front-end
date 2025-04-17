@@ -1,0 +1,21 @@
+services:
+  dev-app:
+    build:
+      context: .
+      target: development
+#      args:
+#        MAIN_BACKEND_SERVER_ADDRESS: http://localhost:8080
+#        MAIN_BACKEND_SERVER_BASE_PATH: /api
+    container_name: microtube-fe
+    ports:
+      - 5173:5173
+    develop:
+      watch:
+        - action: rebuild
+          path: .
+  app:
+    image: localhost/image-name
+    container_name: microtube-frontend
+    ports:
+      - 80:80
+      - 443:443
