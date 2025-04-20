@@ -2,13 +2,14 @@ import React, { MouseEvent, useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { Link } from 'react-router';
-import VideoCard from '../components/VideoCard';
+import SquareVideoCard from '@components/SquareVideoCard.tsx';
 import Skeleton from '../skeletons/HomeSkeleton';
 import VideoGrid from '../styles/VideoGrid';
 import { getRecommendation } from '../reducers/recommendation';
 import type { RootDispatch, RootState } from '../redux-store.ts';
 import { ConciseVideoData, RecommendationListState, VideoStatusEnum } from '../models/video.ts';
 import { toast } from 'react-toastify';
+import { UserStateData } from '@models/authUser.ts';
 
 export const StyledHome = styled.div`
     padding: 1.3rem;
@@ -48,13 +49,15 @@ export const StyledHome = styled.div`
 const Home = () => {
   const dispatch = useDispatch<RootDispatch>();
   const { isFetching, videos } = useSelector<RootState, RecommendationListState>((state) => state.recommendation);
+  const user = useSelector<RootState, UserStateData>((state) => state.user.data);
 
   const onClickVideo = useCallback((e: MouseEvent<HTMLAnchorElement>, video: ConciseVideoData) => {
-    if (video.status != VideoStatusEnum.READY) {
+    if (video.status != VideoStatusEnum.READY && (!user.ownedChannel || user.ownedChannel.id !== video.channelId)) {
+      // Prevent all except video's author
       e.preventDefault();
       toast.info('Video is not ready, please wait & reopen later.');
     }
-  }, []);
+  }, [user.ownedChannel]);
   useEffect(() => {
     dispatch(getRecommendation());
   }, [dispatch]);
@@ -69,9 +72,9 @@ const Home = () => {
 
       <VideoGrid>
         {!isFetching &&
-          videos.map((video) => (
+          videos?.map((video) => (
             <Link key={video.id} to={`/watch/${video.code}`} onClick={(e) => onClickVideo(e, video)}>
-              <VideoCard video={video} />
+              <SquareVideoCard video={video} />
             </Link>
           ))}
       </VideoGrid>

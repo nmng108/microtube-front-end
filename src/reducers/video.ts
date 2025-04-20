@@ -1,7 +1,8 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import {
   type DetailVideoData,
-  toDetailVideoData, VideoReactionEnum,
+  toDetailVideoData,
+  VideoReactionEnum,
   type VideoState,
   VideoStateStatus,
   VideoUpdateType,
@@ -10,25 +11,22 @@ import { videoResource } from '../api';
 import { type BaseAsyncThunkConfig } from '@redux-store.ts';
 import { CommentState, CommentStateData, CommentStateStatus } from '@models/comment.ts';
 import commentResource from '@api/commentResource.ts';
-import watchHistoryResource from '@api/watchHistoryResource.ts';
 
 /**
  * Called inside the `WatchVideo` component to fetch detail info of the specified video.
  */
 export const getVideo = createAsyncThunk<DetailVideoData, number | string, BaseAsyncThunkConfig>(
   'video/getVideo',
-  async (videoId: number | string, thunkAPI) => {
+  async (videoId: number | string, { getState }) => {
     const { ok, problem, data } = await videoResource.get(videoId);
 
     if (ok) {
       const resultStateData: DetailVideoData = toDetailVideoData(data.data);
-      const ownedChannelId: number | undefined = thunkAPI.getState().user.data?.ownedChannel?.id;
+      const ownedChannelId: number | undefined = getState().user.data?.ownedChannel?.id;
 
       if (ownedChannelId > 0) {
         resultStateData.isOwned = (ownedChannelId === data.data.channelId);
       }
-
-      await watchHistoryResource.log({ videoId, pausePosition: 0 }); // TODO: find ways to frequently update pausePosition
 
       return resultStateData;
     }
@@ -48,14 +46,14 @@ type GetCommentsOutput = {
  */
 export const getComments = createAsyncThunk<GetCommentsOutput, Partial<{ parentId: number }>, BaseAsyncThunkConfig>(
   'video/getComments',
-  async (args, thunkAPI) => {
-    const videoId = thunkAPI.getState().video.data.code;
+  async (args, { getState }) => {
+    const videoId = getState().video.data.code;
 
     if (!videoId) {
       throw new Error('Video is not loaded');
     }
 
-    const { currentPage, size } = thunkAPI.getState().video.comment;
+    const { currentPage, size } = getState().video.comment;
     const { ok, problem, data } = await commentResource.getAll(videoId, {
       page: currentPage,
       size,
@@ -63,7 +61,7 @@ export const getComments = createAsyncThunk<GetCommentsOutput, Partial<{ parentI
     });
 
     if (ok) {
-      const userId: number | undefined = thunkAPI.getState().user.data?.id;
+      const userId: number | undefined = getState().user.data?.id;
       const paginatedData = data.data;
       const resultComments: CommentStateData[] = paginatedData.dataset.map((c) => {
         return { ...c, isOwned: (userId > 0) && (userId === c.userId), children: [] };
@@ -84,8 +82,8 @@ type AddCommentArgs = {
 
 export const addComment = createAsyncThunk<CommentStateData, AddCommentArgs, BaseAsyncThunkConfig>(
   'video/addComment',
-  async (args, thunkAPI) => {
-    const videoId = thunkAPI.getState().video.data.code;
+  async (args, { getState }) => {
+    const videoId = getState().video.data.code;
 
     if (!videoId) {
       throw new Error('Video is not loaded');
@@ -99,7 +97,7 @@ export const addComment = createAsyncThunk<CommentStateData, AddCommentArgs, Bas
     });
 
     if (ok) {
-      const user = thunkAPI.getState().user.data;
+      const user = getState().user.data;
 
       return { ...data.data, name: user.name, avatar: user.avatar, isOwned: true, children: [] };
     }
@@ -110,8 +108,8 @@ export const addComment = createAsyncThunk<CommentStateData, AddCommentArgs, Bas
 
 export const deleteComment = createAsyncThunk<number, number, BaseAsyncThunkConfig>(
   'video/deleteComment',
-  async (id, thunkAPI) => {
-    const videoId = thunkAPI.getState().video.data.code;
+  async (id, { getState }) => {
+    const videoId = getState().video.data.code;
 
     if (!videoId) {
       throw new Error('Video is not loaded');
@@ -177,7 +175,7 @@ const videoSlice = createSlice({
   name: 'video',
   initialState,
   reducers: {
-    clearVideo(state) {
+    clearVideoState(state) {
       state.status = VideoStateStatus.NONE;
       state.data = {} as DetailVideoData;
     },
@@ -263,9 +261,18 @@ const videoSlice = createSlice({
 });
 
 export const {
-  clearVideo,
+  clearVideoState,
   clearComments,
   clearCommentStatus,
 } = videoSlice.actions;
+
+export const videoSliceActions = {
+  ...videoSlice.actions,
+  getVideo,
+  getComments,
+  addComment,
+  deleteComment,
+  handleReaction,
+};
 
 export default videoSlice.reducer;

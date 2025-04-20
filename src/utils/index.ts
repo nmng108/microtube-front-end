@@ -44,7 +44,6 @@ export const client = async (endpoint: string, { body, ...customConfig }: HttpCo
 
 export const timeSince = (timestamp: number): string => {
   const seconds = Math.floor((Number(new Date()) - Number(new Date(timestamp))) / 1000);
-
   let interval = Math.floor(seconds / 31536000);
 
   if (interval > 1) {
@@ -52,21 +51,25 @@ export const timeSince = (timestamp: number): string => {
   }
 
   interval = Math.floor(seconds / 2592000);
+
   if (interval > 1) {
     return interval + ' months';
   }
 
   interval = Math.floor(seconds / 86400);
+
   if (interval > 1) {
     return interval + ' days';
   }
 
   interval = Math.floor(seconds / 3600);
+
   if (interval > 1) {
     return interval + ' hours';
   }
 
   interval = Math.floor(seconds / 60);
+
   if (interval > 1) {
     return interval + ' minutes';
   }

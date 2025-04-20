@@ -24,6 +24,7 @@ export interface ConciseVideoData {
   id: number;
   code: string;
   title: string;
+  description?: string;
   visibility: VideoVisibilityEnum;
   status: VideoStatusEnum;
   thumbnail: string;
@@ -39,7 +40,6 @@ export interface ConciseVideoData {
 
 export interface DetailVideoData extends ConciseVideoData {
   url: string;
-  description: string;
   liked: boolean;
   disliked: boolean;
   likeCount: number;
@@ -102,6 +102,7 @@ export interface SearchVideoDTO extends PagingRequest {
   resolutions?: string[];
   channelId?: number;
   reaction?: VideoReactionEnum;
+  subscribed?: boolean;
 }
 
 export interface CreateVideoDTO {
@@ -121,9 +122,9 @@ export interface UpdateVideoDTO {
 
 
 export enum VideoVisibilityEnum {
-  PUBLIC = 1,
+  PUBLIC = 3,
   UNLISTED = 2,
-  PRIVATE = 3,
+  PRIVATE = 1,
 }
 
 export enum VideoStatusEnum {

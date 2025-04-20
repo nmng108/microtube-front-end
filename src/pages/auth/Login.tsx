@@ -1,18 +1,21 @@
-import React, { FormEvent, useCallback, useEffect } from 'react';
+import React, { FormEvent, useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { Link, redirect, useNavigate } from 'react-router';
-import { StyledAuth } from './Signup.tsx';
-import useInput from '../../hooks/useInput';
+import { Link } from 'react-router';
+import { StyledAuth } from './Signup';
+import useInput from '@hooks/useInput';
 import { login } from '@reducers';
-import { type LoginRequestBody, UserStateData } from '@models/authUser.ts';
-import { RootDispatch, type RootState } from '@redux-store.ts';
+import { type LoginRequestBody, UserState, UserStateStatus } from '@models/authUser';
+import { RootDispatch, type RootState } from '@redux-store';
 import { ROUTES } from '../../constants';
+import LabelNestingInput from '@components/input/LabelNestingInput';
 
 const Login = () => {
   const dispatch = useDispatch<RootDispatch>();
+  const { status, problemMessage } = useSelector<RootState, UserState>((state) => state.user);
   const username = useInput('');
   const password = useInput('');
+  const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
 
   const handleLogin = useCallback((e: FormEvent) => {
     e.preventDefault();
@@ -34,6 +37,22 @@ const Login = () => {
     dispatch(login({ payload, clearForm }));
   }, [dispatch, password, username]);
 
+  useEffect(() => {
+    switch (status) {
+      case UserStateStatus.IS_LOGGING_IN:
+        setIsLoggingIn(true);
+        break;
+      case UserStateStatus.LOGIN_SUCCEEDED:
+        setIsLoggingIn(false);
+        toast.success('Logged in!');
+        break;
+      case UserStateStatus.LOGIN_FAILED:
+        setIsLoggingIn(false);
+        toast.error(problemMessage);
+        break;
+    }
+  }, [dispatch, problemMessage, status]);
+
   // Why does this not work if placed in this component, while it functions in the parent Auth?
   // useEffect(() => {
   //   if (storedUsername) {
@@ -46,13 +65,15 @@ const Login = () => {
     <StyledAuth>
       <h2>Login to your account</h2>
       <form onSubmit={handleLogin}>
-        <input
+        <LabelNestingInput
+          label="Username"
           type="text"
           placeholder="username"
           value={username.value}
           onChange={username.onChange}
         />
-        <input
+        <LabelNestingInput
+          label="Password"
           type="password"
           placeholder="password"
           value={password.value}
@@ -60,7 +81,7 @@ const Login = () => {
         />
         <div className="action input-group">
           <Link to={ROUTES.AUTH_REGISTER} className="pointer">Register</Link>
-          <button>Login</button>
+          <button disabled={isLoggingIn} className={isLoggingIn ? 'bg-gray-700' : ''}>Login</button>
         </div>
       </form>
     </StyledAuth>

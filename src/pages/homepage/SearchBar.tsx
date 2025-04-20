@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import useInput from '@hooks/useInput';
 import { StyledComponentProps } from '@styles/StyledComponentProps.ts';
 import { useNavigate, useSearchParams } from 'react-router';
+import { ROUTES } from '@constants';
 
 const Wrapper = styled.div<StyledComponentProps>`
     input.search {
@@ -29,13 +30,13 @@ const SearchBar = () => {
   const navigate = useNavigate();
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.keyCode === 13) {
+    if (e.key === 'Enter') {
       if (!searchString.value.trim()) {
-        return toast.dark('Please enter the searchterm');
+        return toast.dark('Insert keywords to search');
       }
 
       inputRef.current?.blur();
-      navigate(`/search?q=${searchString.value}`);
+      navigate(`${ROUTES.SEARCH}?q=${encodeURIComponent(searchString.value)}`);
     }
   };
 

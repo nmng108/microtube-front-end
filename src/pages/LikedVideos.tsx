@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router';
-import TrendingCard from '../components/TrendingCard';
+import RectangleVideoCard from '@components/RectangleVideoCard.tsx';
 import { StyledTrending } from './Trending';
 import Skeleton from '../skeletons/TrendingSkeleton';
 import { clearLikedVideoListState, getLikedVideos } from '@reducers/likedVideos';
@@ -36,7 +36,7 @@ const LikedVideos = () => {
 
       {dataset?.map((video) => (
         <Link key={video.id} to={`/watch/${video.code}`}>
-          <TrendingCard video={video} />
+          <RectangleVideoCard video={video} />
         </Link>
       ))}
     </StyledTrending>

@@ -1,10 +1,9 @@
+import type { AxiosRequestConfig } from 'axios';
 import { restfulMainBackendWithBasePath } from './configs.ts';
-import { SearchVideoDTO, VideoDTO } from '../models/video.ts';
-import { BasePagingResponse, BaseResponse, ExceptionResponse } from '../models/base.ts';
+import { BasePagingResponse, BaseResponse, ExceptionResponse } from '@models/base';
 import type { ApiResponse, ApisauceInstance } from 'apisauce';
 import { RestfulResource } from '@api/base.ts';
-import type { AxiosRequestConfig } from 'axios';
-import { ChannelDTO } from '@models/channel.ts';
+import { ChannelDTO, CreateChannelDTO, SearchChannelDTO } from '@models/channel';
 
 class ChannelResource {
   private readonly restfulResource: RestfulResource;
@@ -13,15 +12,15 @@ class ChannelResource {
     this.restfulResource = new RestfulResource(apisauceInstance, 'channels');
   }
 
-  getAll(params?: SearchVideoDTO, axiosConfig?: AxiosRequestConfig): Promise<ApiResponse<BasePagingResponse<ChannelDTO>, ExceptionResponse>> {
-    return this.restfulResource.getAll<SearchVideoDTO, BasePagingResponse<ChannelDTO>, ExceptionResponse>(params, axiosConfig);
+  getAll(params?: SearchChannelDTO, axiosConfig?: AxiosRequestConfig): Promise<ApiResponse<BasePagingResponse<ChannelDTO>, ExceptionResponse>> {
+    return this.restfulResource.getAll<SearchChannelDTO, BasePagingResponse<ChannelDTO>, ExceptionResponse>(params, axiosConfig);
   }
 
   get(id: string | number, axiosConfig?: AxiosRequestConfig): Promise<ApiResponse<BaseResponse<ChannelDTO>, ExceptionResponse>> {
     return this.restfulResource.get(id, axiosConfig);
   }
 
-  create(body, axiosConfig?: AxiosRequestConfig): Promise<ApiResponse<BaseResponse<ChannelDTO>, ExceptionResponse>> {
+  create(body: CreateChannelDTO, axiosConfig?: AxiosRequestConfig): Promise<ApiResponse<BaseResponse<ChannelDTO>, ExceptionResponse>> {
     return this.restfulResource.post(body, axiosConfig);
   }
 
@@ -43,7 +42,7 @@ class ChannelResource {
     return this.restfulResource.delete(id, axiosConfig);
   }
 
-  changeSubscriptionState(id: string | number, subscribes: boolean, axiosConfig?: AxiosRequestConfig): Promise<ApiResponse<BaseResponse<VideoDTO>, ExceptionResponse>> {
+  changeSubscriptionState(id: string | number, subscribes: boolean, axiosConfig?: AxiosRequestConfig): Promise<ApiResponse<BaseResponse<void>, ExceptionResponse>> {
     return this.restfulResource.doPatch(`${id}/${subscribes ? 'subscribe' : 'unsubscribe'}`, null, axiosConfig);
   }
 }

@@ -12,6 +12,7 @@ import searchResult from './searchResult.ts';
 import trending from './trending';
 import likedVideos from './likedVideos';
 import history from './history';
+import subscription from './subscription';
 
 // interface StateStore {
 //   user: UserData,
@@ -39,6 +40,7 @@ export default {
   trending,
   likedVideos,
   history,
+  subscription,
 };
 
 export * from './user';
@@ -52,3 +54,4 @@ export * from './searchResult.ts';
 export * from './trending';
 export * from './likedVideos';
 export * from './history';
+export * from './subscription';

@@ -2,10 +2,11 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from "styled-components";
 import { Link } from "react-router";
-import VideoCard from "@components/VideoCard";
+import SquareVideoCard from "@components/SquareVideoCard.tsx";
 import type { RootDispatch, RootState } from '@redux-store.ts';
 import { ConciseVideoData } from '@models/video.ts';
 import { fetchChannelVideos } from '@reducers';
+import { ROUTES } from '@constants';
 
 const Wrapper = styled.div`
   .videos {
@@ -28,12 +29,8 @@ const Wrapper = styled.div`
 `;
 
 const ChannelTabVideo = () => {
-  const dispatch = useDispatch<RootDispatch>();
+  // const dispatch = useDispatch<RootDispatch>();
   const videos = useSelector<RootState, Array<ConciseVideoData>>((state) => state.channel.data.videos);
-
-  useEffect(() => {
-    dispatch(fetchChannelVideos());
-  }, [dispatch]);
 
   if (!videos?.length) {
     return <p>This channel hasn't posted any videos yet</p>;
@@ -43,8 +40,8 @@ const ChannelTabVideo = () => {
     <Wrapper>
       <div className="videos">
         {videos?.map((video) => (
-          <Link to={`/watch/${video.id}`} key={video.id}>
-            <VideoCard nousername={true} hideavatar={true} video={video} />
+          <Link to={`${ROUTES.WATCH}/${video.id}`} key={video.id}>
+            <SquareVideoCard video={video} hidesAvatar={true} hidesChannelName={true} />
           </Link>
         ))}
       </div>

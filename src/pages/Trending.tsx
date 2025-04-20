@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 import { Link } from "react-router";
-import TrendingCard from "../components/TrendingCard";
+import RectangleVideoCard from "@components/RectangleVideoCard.tsx";
 import Skeleton from "../skeletons/TrendingSkeleton";
 import { getTrending } from "../reducers/trending";
 import type { RootDispatch, RootState } from '../redux-store.js';
@@ -46,7 +46,7 @@ const Trending = () => {
         {!isFetching &&
           videos.map((video) => (
             <Link to={`/watch/${video.id}`} key={video.code}>
-              <TrendingCard video={video} />
+              <RectangleVideoCard video={video} />
             </Link>
           ))}
       </div>

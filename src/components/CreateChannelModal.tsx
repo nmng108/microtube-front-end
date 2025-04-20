@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useCallback, useEffect } from 'react';
+import React, { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled, { keyframes } from 'styled-components';
 import { toast } from 'react-toastify';
@@ -7,10 +7,15 @@ import Button from '@styles/Button';
 import useInput from '@hooks/useInput';
 import { StyledComponentProps } from '@styles/StyledComponentProps.ts';
 import type { RootDispatch, RootState } from '@redux-store.ts';
-import { ChannelState, ChannelStateStatus } from '@models/channel.ts';
-import { updateChannel, uploadChannelAvatar } from '@reducers';
+import { clearUserStateStatusAndProblemMessage, createChannel } from '@reducers';
 import LabelNestingInput from '@components/input/LabelNestingInput.tsx';
 import LabelNestingTextArea from '@components/input/LabelNestingTextArea';
+import { UserState, UserStateStatus } from '@models/authUser.ts';
+import { isNotBlank } from '@utilities';
+import { useNavigate } from 'react-router';
+import { ROUTES } from '@constants';
+import defaultAvatar from '@assets/default-avatar.svg';
+import useLoadingToast from '@hooks/useLoadingToast.ts';
 
 const openModal = keyframes`
     from {
@@ -29,17 +34,17 @@ const Wrapper = styled.div<StyledComponentProps>`
     height: 100%;
     z-index: 900;
     background: rgba(0, 0, 0, 0.7);
-    animation: ${openModal} 0.5s ease-in-out;
+    animation: ${openModal} 0.3s ease-in-out;
 
-    .edit-profile {
+    .modal {
         width: 600px;
         border-radius: 4px;
         background: ${(props) => props.theme.grey};
-        margin: 36px auto;
+        margin: 12rem auto;
         box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.4), 0px 0px 4px rgba(0, 0, 0, 0.25);
     }
 
-    .edit-profile img {
+    .modal img {
         object-fit: cover;
     }
 
@@ -85,7 +90,7 @@ const Wrapper = styled.div<StyledComponentProps>`
     }
 
     @media screen and (max-width: 600px) {
-        .edit-profile {
+        .modal {
             width: 90%;
             margin: 4rem auto;
         }
@@ -96,70 +101,96 @@ const Wrapper = styled.div<StyledComponentProps>`
     }
 `;
 
-const EditChannelModal = ({ closeModal }) => {
+type Props = {
+  closeModal: () => void;
+  redirectsToChannelPage?: boolean;
+};
+
+const UpdateChannelModal: React.FC<Props> = ({ closeModal, redirectsToChannelPage = true }) => {
   const dispatch = useDispatch<RootDispatch>();
-  const { status, data: channel } = useSelector<RootState, ChannelState>((state) => state.channel);
+  const { status, problemMessage, data: user } = useSelector<RootState, UserState>((state) => state.user);
 
-  const name = useInput(channel.name);
-  const pathname = useInput(channel.pathname);
-  const description = useInput(channel.description || '');
-
-  // uploaded avatar, cover
-  // const [cover, setCover] = useState('');
-  // const [avatar, setAvatar] = useState('');
-
-  /*  // handlers for image upload
-    const handleCoverUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files[0];
-
-      if (file) {
-        setCover(await upload('image', file));
-      }
-    };*/
+  const name = useInput('');
+  const pathname = useInput(user.username);
+  const description = useInput('');
+  const [avatarUrl, setAvatarUrl] = useState<string>();
+  const [avatarFile, setAvatarFile] = useState<File>();
+  const loadingToast = useLoadingToast();
+  const navigate = useNavigate();
 
   const handleAvatarUpload = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files[0];
 
     if (file) {
-      dispatch(uploadChannelAvatar(file));
+      setAvatarFile(file);
+      setAvatarUrl(URL.createObjectURL(file));
     }
-  }, [dispatch]);
+  }, []);
 
-  const handleEditProfile = useCallback(() => {
+  const handleSubmit = useCallback(() => {
     if (!name.value.trim()) {
       return toast.error('name should not be empty');
     }
 
-    dispatch(updateChannel({
-      // id: channel.id,
-      // data: {
+    dispatch(createChannel({
       name: name.value,
       pathname: pathname.value,
       description: description.value,
-      // },
+      avatarFile: avatarFile,
     }));
-  }, [description.value, name.value, pathname.value, dispatch]);
+  }, [dispatch, name.value, pathname.value, description.value, avatarFile]);
 
   useEffect(() => {
-    if (status == ChannelStateStatus.IS_UPDATING) {
-      console.log('is updating. Should show a loading icon.');
-    } else if (status == ChannelStateStatus.UPDATE_SUCCEEDED) {
-      closeModal();
-    } else if (status == ChannelStateStatus.UPDATE_FAILED) {
-      console.error('update fails');
+    switch (status) {
+      case UserStateStatus.IS_CREATING_CHANNEL:
+        loadingToast.show('Creating...');
+        break;
+      case UserStateStatus.CHANNEL_CREATED: {
+        loadingToast.hide();
+        toast.success('Channel created!');
+
+        // In case uploading avatar fails
+        if (problemMessage && isNotBlank(problemMessage)) {
+          toast.error(problemMessage);
+        }
+
+
+        if (redirectsToChannelPage) {
+          setTimeout(() => {
+            closeModal();
+            navigate(`${ROUTES.CHANNEL}/${user.ownedChannel.pathname}`);
+          }, 1000);
+        } else {
+          closeModal();
+        }
+
+        dispatch(clearUserStateStatusAndProblemMessage());
+        break;
+      }
+      case UserStateStatus.CHANNEL_NOT_CREATED:
+        // TODO: fix the error where this toast is presented twice.
+        loadingToast.hide();
+        toast.error(problemMessage);
+        dispatch(clearUserStateStatusAndProblemMessage());
+        break;
     }
-  }, [closeModal, status]);
+
+    return () => {
+      // In fact, this does not help to avoid re-rendering toast in case dependencies are updated.
+      // This even may cause the toasts to be shown multiple times.
+      // dispatch(clearUserStateStatusAndProblemMessage());
+    };
+  }, [closeModal, redirectsToChannelPage, dispatch, navigate, problemMessage, status, user?.ownedChannel?.pathname]);
 
   return (
     <Wrapper>
-      <div className="container"></div>
-      <div className="edit-profile">
+      <div className="modal">
         <div className="modal-header">
           <h3>
             <CloseIcon onClick={() => closeModal()} />
-            <span>Edit Profile</span>
+            <span>Create channel</span>
           </h3>
-          <Button onClick={handleEditProfile}>Save</Button>
+          <Button onClick={handleSubmit}>Save</Button>
         </div>
 
         {/*<div className="cover-upload-container ">*/}
@@ -186,14 +217,12 @@ const EditChannelModal = ({ closeModal }) => {
         <form>
           <div className="flex mb-2 items-center space-x-2">
             <div className="avatar-upload-icon w-1/6 h-20">
-              <label htmlFor="block w-full h-full avatar-upload">
-                {(channel.avatar) ? (
-                  <img
-                    src={channel.avatar}
-                    className="pointer w-full aspect-square rounded-full"
-                    alt="avatar"
-                  />
-                ) : <div>Upload avatar</div>}
+              <label htmlFor="avatar-upload" className="block w-full h-full avatar-upload cursor-pointer">
+                <img
+                  src={(avatarUrl && isNotBlank(avatarUrl)) ? avatarUrl : defaultAvatar}
+                  className="w-full aspect-square rounded-full"
+                  alt="avatar"
+                />
               </label>
               <input
                 id="avatar-upload"
@@ -204,7 +233,7 @@ const EditChannelModal = ({ closeModal }) => {
               />
             </div>
             <LabelNestingInput
-              label={"Channel name (required)"}
+              label={'Channel name (required)'}
               type="text"
               placeholder="Channel name"
               value={name.value}
@@ -242,4 +271,4 @@ const EditChannelModal = ({ closeModal }) => {
   );
 };
 
-export default EditChannelModal;
+export default UpdateChannelModal;

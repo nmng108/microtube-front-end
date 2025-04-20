@@ -1,15 +1,14 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import useInput from '../../hooks/useInput';
-import { signup } from '@reducers';
-import { isBlank } from '@utilities';
-import { type SignupRequestBody } from '@models/authUser';
-import { type RootDispatch } from '@redux-store';
-import { ROUTES } from '../../constants';
-import { Link, redirect } from 'react-router';
+import { updateUserInfo, clearUserStateStatusAndProblemMessage } from '@reducers';
+import { isBlank, isNotBlank } from '@utilities';
+import  { type UpdateUserDTO, type UserState, UserStateStatus } from '@models/authUser';
+import type { RootDispatch, RootState } from '@redux-store';
 import LabelNestingInput from '@components/input/LabelNestingInput.tsx';
+import useLoadingToast from '@hooks/useLoadingToast.ts';
 
 type StyledAuth = {
   theme: {
@@ -80,28 +79,29 @@ export const StyledAuth = styled.div<StyledAuth>`
     }
 `;
 
-const Signup: React.FC = () => {
+const UpdateUserInfo: React.FC = () => {
   const dispatch = useDispatch<RootDispatch>();
-
-  const firstname = useInput('');
-  const lastname = useInput('');
-  const username = useInput('');
-  const email = useInput('');
+  const { status, problemMessage, data: user } = useSelector<RootState, UserState>((state) => state.user);
+  const name = useInput(user.name);
+  const username = useInput(user.username);
+  const email = useInput(user.email);
   const password1 = useInput('');
   const password2 = useInput('');
+  const loadingToast = useLoadingToast();
 
   const handleSubmit = useCallback((e) => {
     e.preventDefault();
 
     if (
-      isBlank(firstname.value) ||
-      isBlank(lastname.value) ||
+      isBlank(name.value) ||
       isBlank(username.value) ||
-      isBlank(email.value) ||
-      isBlank(password1.value) ||
-      isBlank(password2.value)
+      isBlank(email.value)
     ) {
       return toast.error('Please fill in all the fields');
+    }
+
+    if (isNotBlank(password1.value) && isBlank(password2.value)) {
+      return toast.error('Re-enter your password again');
     }
 
     if (password1.value !== password2.value) {
@@ -113,51 +113,53 @@ const Signup: React.FC = () => {
     }
 
     const re = /^[a-z0-9\x20]+$/i;
+
     if (!re.exec(username.value)) {
       return toast.error('Choose a better username');
     }
 
-    const payload: SignupRequestBody = {
+    const payload: UpdateUserDTO = {
+      name: name.value,
       username: username.value,
-      password: password1.value,
-      name: `${firstname.value}  ${lastname.value}`,
       email: email.value,
       phoneNumber: null,
+      password: password1.value || undefined,
     };
 
-    const clearForm = () => {
-      username.setValue('');
-      firstname.setValue('');
-      lastname.setValue('');
-      email.setValue('');
-      password1.setValue('');
-      password2.setValue('');
-    };
+    dispatch(updateUserInfo(payload));
+  }, [dispatch, email.value, name.value, password1.value, password2.value, username.value]);
 
-    dispatch(signup({ payload, clearForm }));
-    redirect(ROUTES.INDEX);
-  }, [dispatch, email, firstname, lastname, password1, password2, username]);
+  useEffect(() => {
+    switch (status) {
+      case UserStateStatus.IS_UPDATING_USER:
+        loadingToast.show('Updating...');
+        break;
+      case UserStateStatus.USER_UPDATED:
+        loadingToast.hide();
+        toast.success('Your information has been updated');
+        // dispatch(clearUserStateStatusAndProblemMessage());
+        break;
+      case UserStateStatus.USER_NOT_UPDATED:
+        loadingToast.hide();
+        toast.error(problemMessage);
+        // dispatch(clearUserStateStatusAndProblemMessage());
+        break;
+    }
+  }, [dispatch, problemMessage, status]);
 
   return (
     <StyledAuth>
-      <h2>Create your account</h2>
+      <h2>Update your account</h2>
       <form onSubmit={handleSubmit}>
-        <div className="input-group">
-          <LabelNestingInput
-            label="First name"
-            type="text"
-            placeholder="firstname"
-            value={firstname.value}
-            onChange={firstname.onChange}
-          />
-          <LabelNestingInput
-            label="Last name"
-            type="text"
-            placeholder="lastname"
-            value={lastname.value}
-            onChange={lastname.onChange}
-          />
-        </div>
+        {/*<div className="input-group">*/}
+        <LabelNestingInput
+          label="Name"
+          type="text"
+          placeholder="firstname"
+          value={name.value}
+          onChange={name.onChange}
+        />
+        {/*</div>*/}
         <LabelNestingInput
           label="Username"
           type="text"
@@ -186,18 +188,13 @@ const Signup: React.FC = () => {
             placeholder="confirm"
             value={password2.value}
             onChange={password2.onChange}
+            disabled={!password1.value}
           />
         </div>
-        <div className="action input-group">
-          You've already had an account?
-          <Link to={ROUTES.AUTH_LOGIN} className="pointer">
-            Sign in
-          </Link>
-          <button>Sign Up</button>
-        </div>
+        <button className="float-end ">Save</button>
       </form>
     </StyledAuth>
   );
 };
 
-export default Signup;
+export default UpdateUserInfo;

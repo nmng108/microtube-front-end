@@ -12,7 +12,7 @@ type Props = {
   className?: string;
 };
 
-const SingleImageInput: React.FC<Props> = ({ onChange, className }) => {
+const SingleImageInputArea: React.FC<Props> = ({ onChange, className }) => {
   const inputName = useRef<string>(generateRandomString(5));
   const [file, setFile] = useState<File>();
   const [previewUrl, setPreviewUrl] = useState<string>();
@@ -90,7 +90,7 @@ const SingleImageInput: React.FC<Props> = ({ onChange, className }) => {
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               className={
-                `block w-full h-full border-2 border-dashed rounded-lg p-2 text-center cursor-pointer transition-colors bg-gray-900/50
+                `block w-full h-full border-2 border-dashed rounded-lg px-2 py-6 text-center cursor-pointer transition-colors bg-gray-900/50
                   ${isDragging
                   ? 'border-blue-500 bg-blue-500/10'
                   : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/50'}`
@@ -100,54 +100,45 @@ const SingleImageInput: React.FC<Props> = ({ onChange, className }) => {
               <p className="text-gray-300 text-sm">Drag &apos;n&apos; drop files, or click to select files</p>
             </label>
             <input
+              id={inputName.current}
               name={inputName.current}
               type="file"
               accept="image/*"
               onChange={handleInputChange}
-              // className=" inset-0 opacity-0 cursor-pointer"
+              className="hidden"
               // title="" // Improves accessibility
               // aria-label="Upload files"
-              hidden
             />
           </>
         ) : (
-          <div className="space-y-4">
-            {/*<div className="space-y-2">*/}
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="relative p-2 rounded-md bg-gray-800 border border-gray-700"
-            >
-              <div className="flex items-center gap-2 truncate">
-                {/*{file?.type?.startsWith('image/') ? (*/}
-                <div className="relative">
-                  <img
-                    src={previewUrl}
-                    alt="Thumbnail"
-                    className="h-full rounded-md object-cover"
-                  />
-                </div>
-                {/*) : (*/}
-                {/*// <File className="w-6 h-6 text-gray-400" />*/}
-                {/*)}*/}
-                {/*<span className="text-gray-300 truncate">{file?.name}</span>*/}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="relative w-full h-full p-2 rounded-md bg-gray-800 border border-gray-700"
+          >
+            {/*<div className="flex items-center gap-2 truncate">*/}
+              <div className="flex w-full h-full items-center">
+                <img
+                  src={previewUrl}
+                  alt="Thumbnail"
+                  className="block w-auto h-auto max-h-full mx-auto object-cover"
+                />
               </div>
-              <span
-                // variant="contained"
-                // size="icon"
-                onClick={() => removeFile()}
-                className="absolute top-0 right-0 -mt-1 -mr-1 text-gray-400 hover:text-red-500"
-              >
-                <X className="w-4 h-4" />
-              </span>
-            </motion.div>
             {/*</div>*/}
-          </div>
+            <span
+              // variant="contained"
+              // size="icon"
+              onClick={() => removeFile()}
+              className="absolute top-0 right-0 -mt-1 -mr-1 text-gray-400 hover:text-red-500"
+            >
+                <X className="absolute w-4 h-4" />
+              </span>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
 };
 
-export default SingleImageInput;
+export default SingleImageInputArea;

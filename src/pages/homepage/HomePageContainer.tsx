@@ -15,11 +15,11 @@ const HomePageContainer: React.FC = () => {
   const username = useSelector<RootState, string>((state) => state.user.data.username);
   const navigate = useNavigate();
 
-  // Route to login page in case user's info had been deleted from the redux store
   useEffect(() => {
     if (username && isNotBlank(username)) return;
 
-    navigate(ROUTES.AUTH_LOGIN);
+    // Route to login page in case user's info had been deleted from the redux store
+    // navigate(ROUTES.AUTH_LOGIN);
   }, [navigate, username]);
 
   return (

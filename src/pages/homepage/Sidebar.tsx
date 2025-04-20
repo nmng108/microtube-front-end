@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled, { css } from 'styled-components';
 import { NavLink } from 'react-router';
-import Subscriptions from '@components/Subscriptions';
+import SubscriptionList from '@pages/homepage/SubscriptionList.tsx';
 import {
   HomeIcon,
   TrendingIcon,
@@ -17,6 +17,10 @@ import type { RootDispatch, RootState } from '@redux-store.ts';
 import { StyledComponentProps } from '@styles/StyledComponentProps.ts';
 import { ROUTES } from '@constants';
 import { UserStateData } from '@models/authUser';
+import { Button } from '@mui/material';
+import UpdateChannelModal from '@pages/channel/UpdateChannelModal.tsx';
+import CreateChannelModal from '@components/CreateChannelModal.tsx';
+import { getLoginPathWithContinuedPath } from '@constants/routes.ts';
 
 type Wrapper = StyledComponentProps & { open: boolean };
 
@@ -79,11 +83,17 @@ const Wrapper = styled.div<Wrapper>`
 const Sidebar = () => {
   const dispatch = useDispatch<RootDispatch>();
   const { sidebar: open } = useSelector<RootState, SidebarState>((state) => state.sidebar);
-  const { ownedChannel } = useSelector<RootState, UserStateData>((state) => state.user.data);
+  const { id: userId, ownedChannel } = useSelector<RootState, UserStateData>((state) => state.user.data);
+  const [showsCreateChannelModal, setShowsCreateChannelModal] = useState<boolean>(false);
+  const loggedIn = useMemo<boolean>(() => userId && userId > 0, []);
 
-  const handleCloseSidebar = () => {
+  const handleCloseSidebar = useCallback(() => {
     dispatch(closeSidebar());
-  };
+  }, [dispatch]);
+
+  const closeCreateChannelModal = useCallback(() => {
+    setShowsCreateChannelModal(false);
+  }, []);
 
   return (
     <Wrapper open={open}>
@@ -98,7 +108,7 @@ const Sidebar = () => {
         </div>
       </NavLink>
       <NavLink
-        to="/feed/trending"
+        to="/trending"
         onClick={handleCloseSidebar}
         className="active"
       >
@@ -108,7 +118,7 @@ const Sidebar = () => {
         </div>
       </NavLink>
       <NavLink
-        to="/feed/subscriptions"
+        to="/subscriptions"
         onClick={handleCloseSidebar}
         className="active"
       >
@@ -121,7 +131,7 @@ const Sidebar = () => {
       <div className="ruler"></div>
 
       <NavLink
-        to="/feed/liked-videos"
+        to={loggedIn ? ROUTES.LIKED_VIDEOS : getLoginPathWithContinuedPath(ROUTES.LIKED_VIDEOS)}
         onClick={handleCloseSidebar}
         className="active"
       >
@@ -131,7 +141,7 @@ const Sidebar = () => {
         </div>
       </NavLink>
       <NavLink
-        to="/feed/library"
+        to={loggedIn ? '/library' : getLoginPathWithContinuedPath('/library')}
         onClick={handleCloseSidebar}
         className="active"
       >
@@ -142,7 +152,7 @@ const Sidebar = () => {
       </NavLink>
 
       <NavLink
-        to="/watch-history"
+        to={loggedIn ? ROUTES.WATCH_HISTORY : getLoginPathWithContinuedPath(ROUTES.WATCH_HISTORY)}
         onClick={handleCloseSidebar}
         className="active"
       >
@@ -164,10 +174,19 @@ const Sidebar = () => {
           </div>
         </NavLink>
       )}
+      {loggedIn && !ownedChannel && (
+        <div onClick={() => setShowsCreateChannelModal(true)} className="active cursor-pointer">
+          <div className="icon">
+            <VidIcon />
+            <span>Your channel</span>
+          </div>
+        </div>
+      )}
 
       <div className="ruler"></div>
+      <SubscriptionList />
 
-      <Subscriptions />
+      {showsCreateChannelModal && <CreateChannelModal closeModal={closeCreateChannelModal} />}
     </Wrapper>
   );
 };

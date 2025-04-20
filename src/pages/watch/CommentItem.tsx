@@ -217,7 +217,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply }) => {
           </div>
           {isReplying && (
             <div className="reply-form">
-              <img src={user?.avatar ?? defaultAvatar} alt="avatar" />
+              <img src={user?.avatar || defaultAvatar} alt="avatar" />
               <textarea
                 placeholder="Reply to this comment"
                 value={replyInput.value}

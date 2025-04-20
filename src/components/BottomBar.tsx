@@ -62,19 +62,19 @@ const BottomBar = () => {
           <HomeIcon />
         </NavLink>
 
-        <NavLink className="active" to="/feed/trending">
+        <NavLink className="active" to="/trending">
           <TrendingIcon />
         </NavLink>
 
-        <NavLink className="active" to="/feed/subscriptions">
+        <NavLink className="active" to="/subscriptions">
           <SubIcon />
         </NavLink>
 
-        <NavLink className="active" to="/feed/history">
+        <NavLink className="active" to="/history">
           <HistoryIcon />
         </NavLink>
 
-        <NavLink className="active" to="/feed/liked_videos">
+        <NavLink className="active" to="/liked_videos">
           <WatchIcon />
         </NavLink>
       </div>

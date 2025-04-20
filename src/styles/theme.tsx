@@ -1,4 +1,6 @@
-export const darkTheme = {
+import { Theme } from '@styles/StyledComponentProps.ts';
+
+export const darkTheme: Theme = {
   bg: "#181818",
   primaryColor: "#FFF",
   secondaryColor: "#AAAAAA",

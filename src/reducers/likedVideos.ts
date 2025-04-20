@@ -11,14 +11,14 @@ import { BaseAsyncThunkConfig } from '@redux-store.ts';
 
 export const getLikedVideos = createAsyncThunk<Array<ConciseVideoData>, void, BaseAsyncThunkConfig>(
   'likedVideos/get',
-  async (args, thunkAPI) => {
+  async (args, { getState }) => {
     const { ok, problem, data } = await videoResource.getAll({ reaction: VideoReactionEnum.LIKE });
 
     if (!ok) {
       throw new Error(`Could not get recommendations. Reason: ${problem}`);
     }
 
-    const channelId: number | undefined = thunkAPI.getState().user.data?.ownedChannel?.id;
+    const channelId: number | undefined = getState().user.data?.ownedChannel?.id;
 
     return data.data.dataset?.map(toDetailVideoData).map((v) => {
       v.isOwned = (v.channelId === channelId);

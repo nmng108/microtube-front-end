@@ -2,7 +2,7 @@ import React, { useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router';
 import ClearRoundedIcon from '@mui/icons-material/ClearRounded';
-import TrendingCard from '../components/TrendingCard';
+import RectangleVideoCard from '@components/RectangleVideoCard.tsx';
 import { StyledTrending } from './Trending';
 import Skeleton from '../skeletons/TrendingSkeleton';
 import { clearHistoryState, deleteHistoryRecord, getHistory } from '@reducers';
@@ -10,7 +10,7 @@ import type { RootDispatch, RootState } from '@redux-store.ts';
 import { WatchHistoryState, WatchHistoryStateStatus } from '@models/watchHistory.ts';
 import { IconButton } from '@mui/material';
 
-const History = ({ nopad }) => {
+const WatchHistory = ({ nopad }) => {
   const dispatch = useDispatch<RootDispatch>();
   const { status, dataset } = useSelector<RootState, WatchHistoryState>((state) => state.history);
 
@@ -41,13 +41,12 @@ const History = ({ nopad }) => {
       )}
 
       {dataset.map((video) => (
-        <Link key={video.id} to={`/watch/${video.code}`} className="relative">
+        <Link key={video.historyRecordId} to={`/watch/${video.code}`} className="relative">
           {/*<div className="">*/}
-          <TrendingCard video={video} />
+          <RectangleVideoCard video={video} />
           {/*</div>*/}
           <IconButton
             onClick={(e) => {
-              console.log('clicked delete');
               e.preventDefault();
               e.stopPropagation();
               handleDelete(video.historyRecordId);
@@ -63,4 +62,4 @@ const History = ({ nopad }) => {
   );
 };
 
-export default History;
+export default WatchHistory;

@@ -39,7 +39,7 @@ const App = () => {
   return (
     <ThemeProvider theme={darkTheme}>
       <GlobalStyle />
-      <ToastContainer autoClose={2500} position="top-right" closeButton={false} />
+      <ToastContainer autoClose={2000} position="top-right" closeButton={false} closeOnClick={true} />
       <RouterProvider router={router} />
     </ThemeProvider>
   );

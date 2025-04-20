@@ -1,4 +1,5 @@
 import { ConciseVideoData } from '@models/video.ts';
+import { PagingRequest } from '@models/base.ts';
 
 export interface ChannelState {
   status: ChannelStateStatus;
@@ -11,9 +12,18 @@ export enum ChannelStateStatus {
   IS_FETCHING,
   FETCHING_FAILED,
   FETCHING_SUCCEEDED,
+
+  IS_FETCHING_VIDEOS,
+  FETCHING_VIDEOS_FAILED,
+  FETCHING_VIDEOS_SUCCEEDED,
+
   IS_UPDATING,
   UPDATE_SUCCEEDED,
   UPDATE_FAILED,
+
+  IS_UPLOADING,
+  UPLOAD_SUCCEEDED,
+  UPLOAD_FAILED,
 }
 
 export interface ChannelStateData {
@@ -23,7 +33,8 @@ export interface ChannelStateData {
   avatar?: string;
   cover?: string;
   description?: string;
-  subscriptionCount?: number;
+  subscriptionCount: number;
+  videoCount: number;
   createdAt: string;
   userId: number;
   subscribed: boolean;
@@ -39,9 +50,21 @@ export interface ChannelDTO {
   cover?: string;
   description?: string;
   subscriptionCount: number;
+  videoCount: number;
   createdAt: string;
   userId: number;
   subscribed?: boolean;
+}
+
+export interface SearchChannelDTO extends PagingRequest {
+  name?: string;
+  subscribed?: boolean;
+}
+
+export interface CreateChannelDTO {
+  name: string;
+  pathname: string;
+  description?: string;
 }
 
 export interface UpdateChannelDTO {
@@ -59,6 +82,7 @@ export function toChannelStateData(channelDTO: ChannelDTO): ChannelStateData {
     cover: channelDTO.cover,
     description: channelDTO.description,
     subscriptionCount: channelDTO.subscriptionCount,
+    videoCount: channelDTO.videoCount,
     createdAt: channelDTO.createdAt,
     userId: channelDTO.userId,
     subscribed: channelDTO.subscribed,

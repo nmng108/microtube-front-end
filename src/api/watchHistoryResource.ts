@@ -22,7 +22,7 @@ class WatchHistoryResource {
   }
 
   log(body: AppendHistoryRecordDTO, axiosConfig?: AxiosRequestConfig): Promise<ApiResponse<BaseResponse<WatchHistoryDTO>, ExceptionResponse>> {
-    return this.restfulResource.doPut('', body, axiosConfig);
+    return this.restfulResource.doPut('', body, axiosConfig, false);
   }
 
   delete(ids: number[], axiosConfig?: AxiosRequestConfig): Promise<ApiResponse<BaseResponse, ExceptionResponse>> {

@@ -5,14 +5,14 @@ import { BaseAsyncThunkConfig } from '@redux-store.ts';
 
 export const getRecommendation = createAsyncThunk<Array<ConciseVideoData>, void, BaseAsyncThunkConfig>(
   'recommendation/getRecommendation',
-  async (args, thunkAPI) => {
+  async (args, { getState }) => {
     const { ok, problem, data } = await videoResource.getAll();
 
     if (!ok) {
       throw new Error(`Could not get recommendations. Reason: ${problem}`);
     }
 
-    const channelId: number | undefined = thunkAPI.getState().user.data?.ownedChannel?.id;
+    const channelId: number | undefined = getState().user.data?.ownedChannel?.id;
 
     return data.data.dataset?.map(toDetailVideoData).map((v) => {
       v.isOwned = (v.channelId === channelId);

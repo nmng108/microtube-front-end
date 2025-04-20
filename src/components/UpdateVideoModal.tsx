@@ -8,15 +8,14 @@ import useInput from '../hooks/useInput';
 import type { RootDispatch, RootState } from '@redux-store.ts';
 import { type UserState } from '@models/authUser';
 import { StyledComponentProps } from '@styles/StyledComponentProps.ts';
-import PreviewPlayer from '@components/PreviewPlayer.tsx';
 import LabelNestingInput from '@components/input/LabelNestingInput.tsx';
-import { Share2 } from 'lucide-react';
-import { VideoVisibilityEnum } from '@models/video.ts';
+import { Share2, X } from 'lucide-react';
+import { ConciseVideoData, VideoUpdateType, VideoVisibilityEnum } from '@models/video.ts';
 import { Button, FormControl, FormControlLabel, FormLabel, Radio, RadioGroup, Typography } from '@mui/material';
 import { RadioButtonChecked, RadioButtonUnchecked } from '@mui/icons-material';
 import SingleImageInputArea from '@components/input/SingleImageInputArea.tsx';
 import { videoResource } from '@api';
-import { uploadImmediate } from '@utilities';
+import { isBlank, uploadImmediate } from '@utilities';
 
 const openModal = keyframes`
     from {
@@ -168,41 +167,27 @@ const visibilityOptions = [
 ];
 
 type Props = {
-  videoFile: File,
-  source: { src: string, type: string },
+  video: ConciseVideoData,
+  // source: { src: string, type: string },
   closeModal: () => void,
 };
 
-const UploadVideoModal: React.FC<Props> = ({ videoFile, source, closeModal }) => {
+const UpdateVideoModal: React.FC<Props> = ({ video, closeModal }) => {
   const dispatch = useDispatch<RootDispatch>();
-  const { data: user } = useSelector<RootState, UserState>((state) => state.user);
-  const title = useInput('');
-  const description = useInput('');
-  const [tab, setTab] = useState<Tab>(Tab.PREVIEW);
+  const title = useInput(video.title);
+  const description = useInput(video.description);
+  const [isSettingThumbnail, setIsSettingThumbnail] = useState<boolean>(isBlank(video.thumbnail));
   const [thumbnailFile, setThumbnailFile] = useState<File>();
   const [focused, setFocused] = useState<boolean>(false);
-  const [visibility, setVisibility] = useState<VideoVisibilityEnum>(VideoVisibilityEnum.PUBLIC);
+  const [visibility, setVisibility] = useState<VideoVisibilityEnum>(video.visibility);
 
-  const handleSwitchTabOrSubmit = useCallback(async () => {
-    if (tab === Tab.PREVIEW) {
-      setTab(Tab.FORM);
-      return;
-    }
-
-    if (!title.value.trim()) {
+  const handleSubmit = useCallback(async () => {
+    if (isBlank(title.value)) {
       return toast.error('Fill the video\'s title!');
     }
 
-    if (!videoFile) {
-      return toast.error('Please choose a video first!');
-    }
-    // const newVideo = {
-    //   title: title.value,
-    //   description: description.value,
-    //   thumbnail,
-    // };
-
-    const createVideoResponse = await videoResource.create({
+    const createVideoResponse = await videoResource.update(video.code, {
+      updateType: VideoUpdateType.UPDATE_INFO,
       title: title.value,
       description: description.value,
       visibility,
@@ -211,9 +196,9 @@ const UploadVideoModal: React.FC<Props> = ({ videoFile, source, closeModal }) =>
 
     if (!createVideoResponse.ok) {
       if (createVideoResponse.problem == 'CLIENT_ERROR') {
-        toast.error('Cannot create video. Check the form and try later.');
+        toast.error('Cannot update video. Check the form and try later.');
       } else {
-        toast.error('Cannot create video. Try again later.');
+        toast.error('Cannot update video. Try again later.');
       }
 
       return;
@@ -236,39 +221,9 @@ const UploadVideoModal: React.FC<Props> = ({ videoFile, source, closeModal }) =>
       );
     }
 
-    const videoUploadRes = await uploadImmediate(
-      videoFile,
-      (formData, config) => videoResource.uploadVideo(createVideoResponse.data.data.id, formData, config),
-    );
-
-    if (!videoUploadRes.ok) {
-      if (videoUploadRes.problem == 'CLIENT_ERROR') {
-        toast.error('Cannot upload video.');
-      } else {
-        toast.error('Cannot upload video. Try again later.');
-      }
-
-      throw videoUploadRes.originalError;
-    }
-
-
-    toast.success('Video is being processed and will be ready in a few minutes.');
+    toast.success('Video has been updated!');
     closeModal();
-
-    // dispatch(
-    //   addToRecommendation({
-    //     ...video,
-    //     views: 0,
-    //     User: {
-    //       id: user.id,
-    //       avatar: user.avatar,
-    //       username: user.username,
-    //     },
-    //   }),
-    // );
-
-  }, [closeModal, description.value, tab, thumbnailFile, title.value, videoFile, visibility]);
-
+  }, [closeModal, description.value, thumbnailFile, title.value, video.code, visibility]);
 
   return (
     <Wrapper>
@@ -276,41 +231,40 @@ const UploadVideoModal: React.FC<Props> = ({ videoFile, source, closeModal }) =>
         <div className="modal-header">
           <div className="modal-header-left">
             <CloseIcon onClick={() => closeModal()} />
-            <h3>Upload Video</h3>
+            <h3>Update Video</h3>
           </div>
           <div className="flex space-x-2">
-            {tab === Tab.FORM && (
-              <CustomButton onClick={() => setTab(Tab.PREVIEW)}>Back</CustomButton>
-            )}
-            <CustomButton onClick={handleSwitchTabOrSubmit}>
-              {tab === Tab.PREVIEW ? 'Next' : 'Upload'}
+            <CustomButton onClick={handleSubmit}>
+              Update
             </CustomButton>
           </div>
         </div>
 
-        {tab === Tab.PREVIEW && (
-          <div className="tab video-preview">
-            {/*<VideoJsPlayer options={{...defaultVideoJsOptions, sources: [source]}} onReady={handlePlayerReady} />*/}
-            <PreviewPlayer url={source.src} type={source.type} />
-          </div>
-        )}
-
-        {tab === Tab.FORM && (
-          <div className="tab video-form">
-            <h5 className="my-2 text-lg font-semibold text-gray-100">
-              Thumbnail <span className="text-sm font-light">(automatically set if not specified)</span>
-            </h5>
+        <div className="tab video-form">
+          <h5 className="my-2 text-lg font-semibold text-gray-100">
+            Thumbnail {/*<span className="text-sm font-light">(automatically set if not specified)</span>*/}
+          </h5>
+          {video.thumbnail && !isSettingThumbnail && (
+            <div className="flex space-x-8">
+              <div className="w-64 h-36 mb-2">
+                <img src={video.thumbnail} alt="Thumbnail" className="block w-auto h-auto max-h-full mx-auto" />
+              </div>
+              <X onClick={() => setIsSettingThumbnail(true)} className="top-0 w-4 h-4 rounded-md " />
+            </div>
+          )}
+          {isSettingThumbnail && (
             <SingleImageInputArea onChange={setThumbnailFile} className="w-64 h-36 mb-2" />
+          )}
 
-            <h5 className="my-4 text-lg font-semibold text-gray-100">Details</h5>
-            <LabelNestingInput
-              label="Title (required)"
-              type="text"
-              value={title.value}
-              required
-              onChange={title.onChange}
-            />
-            <div className="relative min-h-16 mb-4">
+          <h5 className="my-4 text-lg font-semibold text-gray-100">Details</h5>
+          <LabelNestingInput
+            label="Title (required)"
+            type="text"
+            value={title.value}
+            required
+            onChange={title.onChange}
+          />
+          <div className="relative min-h-16 mb-4">
               <textarea
                 value={description.value}
                 onChange={description.onChange}
@@ -319,65 +273,64 @@ const UploadVideoModal: React.FC<Props> = ({ videoFile, source, closeModal }) =>
                 className="w-full px-3 pt-6 pb-2 text-sm bg-transparent border border-gray-500 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Tell viewers about your video"
               />
-              <label
-                className={`absolute left-3 transition-all text-sm ${
-                  'top-1 text-xs text-gray-400'
-                  // focused
-                  // ? 'top-1 text-xs text-blue-400'
-                  // : 'top-3.5 text-gray-400'
-                } pointer-events-none`}
-              >
-                Description
-              </label>
-            </div>
-
-            <FormControl>
-              <FormLabel className="text-lg font-semibold text-gray-100">Save or publish</FormLabel>
-              <p className="text-sm text-gray-400 mb-6">Make your video public, unlisted, or private</p>
-              <RadioGroup
-                // defaultValue={VideoVisibility.PUBLIC}
-                name="visibility"
-                // className="space-y-4"
-                onChange={(e, value) => setVisibility(Number(value))}
-              >
-                {visibilityOptions.map((option, index) => (
-                  <div key={index} className="space-y-1">
-                    <FormControlLabel
-                      value={option.value}
-                      control={<Radio size="small" checked={visibility == option.value} className="m-0"
-                                      icon={<RadioButtonUnchecked className="mr-2" />}
-                                      checkedIcon={<RadioButtonChecked className="mr-2" />} />}
-                      label={
-                        <div className="">
-                          <Typography variant="body1" className="text-gray-200">
-                            {option.label}
-                          </Typography>
-                          <Typography variant="caption" className="text-gray-400">
-                            {option.description}
-                          </Typography>
-                        </div>
-                      }
-                      className="mb-1 ml-0"
-                    />
-                    {/*{option.value === VideoVisibility.PRIVATE && selectedPrivacy === 'private' && (*/}
-                    {/*  <Button*/}
-                    {/*    variant="outlined"*/}
-                    {/*    size="small"*/}
-                    {/*    className="ml-8 bg-gray-800 hover:bg-gray-700 text-gray-300 border-gray-700 flex items-center gap-2"*/}
-                    {/*  >*/}
-                    {/*    <Share className="w-4 h-4" />*/}
-                    {/*    Share privately*/}
-                    {/*  </Button>*/}
-                    {/*)}*/}
-                  </div>
-                ))}
-              </RadioGroup>
-            </FormControl>
+            <label
+              className={`absolute left-3 transition-all text-sm ${
+                'top-1 text-xs text-gray-400'
+                // focused
+                // ? 'top-1 text-xs text-blue-400'
+                // : 'top-3.5 text-gray-400'
+              } pointer-events-none`}
+            >
+              Description
+            </label>
           </div>
-        )}
+
+          <FormControl>
+            <FormLabel className="text-lg font-semibold text-gray-100">Save or publish</FormLabel>
+            <p className="text-sm text-gray-400 mb-6">Make your video public, unlisted, or private</p>
+            <RadioGroup
+              // defaultValue={VideoVisibility.PUBLIC}
+              name="visibility"
+              // className="space-y-4"
+              onChange={(e, value) => setVisibility(Number(value))}
+            >
+              {visibilityOptions.map((option, index) => (
+                <div key={index} className="space-y-1">
+                  <FormControlLabel
+                    value={option.value}
+                    control={<Radio size="small" checked={visibility == option.value} className="m-0"
+                                    icon={<RadioButtonUnchecked className="mr-2" />}
+                                    checkedIcon={<RadioButtonChecked className="mr-2" />} />}
+                    label={
+                      <div className="">
+                        <Typography variant="body1" className="text-gray-200">
+                          {option.label}
+                        </Typography>
+                        <Typography variant="caption" className="text-gray-400">
+                          {option.description}
+                        </Typography>
+                      </div>
+                    }
+                    className="mb-1 ml-0"
+                  />
+                  {/*{option.value === VideoVisibility.PRIVATE && selectedPrivacy === 'private' && (*/}
+                  {/*  <Button*/}
+                  {/*    variant="outlined"*/}
+                  {/*    size="small"*/}
+                  {/*    className="ml-8 bg-gray-800 hover:bg-gray-700 text-gray-300 border-gray-700 flex items-center gap-2"*/}
+                  {/*  >*/}
+                  {/*    <Share className="w-4 h-4" />*/}
+                  {/*    Share privately*/}
+                  {/*  </Button>*/}
+                  {/*)}*/}
+                </div>
+              ))}
+            </RadioGroup>
+          </FormControl>
+        </div>
       </div>
     </Wrapper>
   );
 };
 
-export default UploadVideoModal;
+export default UpdateVideoModal;

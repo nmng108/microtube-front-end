@@ -18,7 +18,11 @@ class AuthResource {
   }
 
   login(body: LoginRequestBody): Promise<ApiResponse<BaseResponse<LoginResponseBody>, ExceptionResponse>> {
-    return this.restfulResource.doPost<LoginRequestBody, BaseResponse<LoginResponseBody>, ExceptionResponse>('/login', body);
+    return this.restfulResource.doPost<LoginRequestBody, BaseResponse<LoginResponseBody>, ExceptionResponse>('/login', body, null, false);
+  }
+
+  logout(): Promise<ApiResponse<void, ExceptionResponse>> {
+    return this.restfulResource.doGet<void, void, ExceptionResponse>('/logout');
   }
 
   signup(body: SignupRequestBody): Promise<ApiResponse<BaseResponse<LoginResponseBody>, ExceptionResponse>> {

@@ -1,6 +1,7 @@
 import { createGlobalStyle } from "styled-components";
+import { StyledComponentProps } from '@styles/StyledComponentProps';
 
-const GlobalStyle = createGlobalStyle`
+const GlobalStyle = createGlobalStyle<StyledComponentProps>`
 	html {
 		font-size: 16px;
 		box-sizing: border-box;
@@ -14,7 +15,7 @@ const GlobalStyle = createGlobalStyle`
 
 	body {
 		font-size: 1rem;
-		font-family: ${(props) => props.theme.font}, sans-serif;
+		// font-family: ${(props) => props.theme.font}, sans-serif;
 		color: ${(props) => props.theme.primaryColor};
 		background-color: ${(props) => props.theme.bg};
 		line-height: 1.8;
@@ -39,7 +40,7 @@ const GlobalStyle = createGlobalStyle`
 	}
 
 	button {
-		font-family: 'Fira Sans', sans-serif;
+		//font-family: 'Fira Sans', sans-serif;
 		font-size: 1rem;
 		cursor: pointer;
 	}

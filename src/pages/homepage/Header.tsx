@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { Link } from 'react-router';
@@ -10,7 +10,7 @@ import { closeSidebar, openSidebar, SidebarState } from '@reducers/sidebar';
 import type { RootDispatch, RootState } from '@redux-store.ts';
 import { type UserState } from '@models/authUser';
 import { ROUTES } from '@constants';
-import defaultAvatar from '../../assets/default-avatar.svg';
+import defaultAvatar from '@assets/default-avatar.svg';
 import { StyledComponentProps } from '@styles/StyledComponentProps.ts';
 import { Button } from '@mui/material';
 import { logout } from '@reducers';
@@ -20,6 +20,7 @@ const Wrapper = styled.div<StyledComponentProps>`
     top: 0;
     left: 0;
     display: flex;
+    height: 4rem;
     justify-content: space-between;
     align-items: center;
     width: 100%;
@@ -55,7 +56,6 @@ const Wrapper = styled.div<StyledComponentProps>`
 
     img {
         position: relative;
-        top: 3px;
     }
 
     .dropdown-list {
@@ -107,15 +107,16 @@ const Header = () => {
   const dropdownToggleRef = useRef<HTMLLIElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleToggleSidebar = () => {
+  const handleToggleSidebar = useCallback(() => {
     if (open) {
       dispatch(closeSidebar());
     } else {
       dispatch(openSidebar());
     }
-  };
-  const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
-  const handleClickLogout = () => dispatch(logout());
+  }, [dispatch, open]);
+
+  const toggleDropdown = useCallback(() => setDropdownOpen(!dropdownOpen), [dropdownOpen]);
+  const handleClickLogout = useCallback(() => dispatch(logout()), [dispatch]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -139,23 +140,26 @@ const Header = () => {
 
   return (
     <Wrapper>
-      <div className="logo flex-row">
+      <div className="logo flex items-center justify-between">
         <HamburgerIcon
           className="toggle-navhandler"
           onClick={handleToggleSidebar}
         />
-        <span>
-          <Link to="/">Microtube</Link>
-        </span>
+        <Link to="/" className="flex h-full items-center space-x-2 text-white text-lg font-bold">
+          <img src="/icon.svg" alt="Logo" className="h-14" />
+          <span className="hidden lg:inline">Microtube</span>
+        </Link>
       </div>
 
       <SearchBar />
 
       {(user?.id >= 0) ? (
         <ul className="flex h-full items-end space-x-2 text-white border-0 hover:text-gray-300 focus:outline-none">
-          <li>
-            <VideoUploadButton />
-          </li>
+          {(user.ownedChannel?.id > 0) && (
+            <li>
+              <VideoUploadButton />
+            </li>
+          )}
           <li>
             <NotificationIcon />
           </li>
@@ -169,14 +173,14 @@ const Header = () => {
             </Button>
             {/* Dropdown Menu */}
             {dropdownOpen && (
-              <div className="h-full relative">
+              <div onClick={toggleDropdown} className="h-full relative">
                 <div
                   ref={dropdownRef}
                   className="dropdown-list absolute right-0 top-0 w-40 rounded-lg py-2 mt-2 shadow-lg text-gray-700 z-20">
                   <nav /* className="hidden md:flex space-x-6 text-teal-300"*/>
                     {/*<nav className="hidden md:flex space-x-6">*/}
                     {[
-                      { name: 'Profile', route: '/profile' },
+                      { name: 'Profile', route: ROUTES.USER_PROFILE },
                       // { name: 'Logout', route: '/' },
                     ].map(({ name, route }, index) => {
                       return (
@@ -193,7 +197,7 @@ const Header = () => {
                     <div
                       onClick={handleClickLogout}
                       // className="block px-4 py-2 hover:bg-blue-gray-900 transition duration-200 text-white no-underline"
-                      className="block w-full px-4 py-2 border-0 hover:cursor-pointer transition duration-200 font-bold text-white text-md"
+                      className="block w-full px-4 py-2 border-0 cursor-pointer transition duration-200 font-bold text-white text-md"
                     >
                       Logout
                     </div>

@@ -4,19 +4,21 @@ type Props = {
   label: string;
   type?: string;
   value: string;
-  placeholder?: string;
   required?: boolean;
+  placeholder?: string;
+  disabled?: boolean;
   onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
+  className?: string;
 }
 
-const LabelNestingInput: React.FC<Props> = (props) => {
-  const { label, type = 'text', value, placeholder, required = false, onChange } = props;
+const LabelNestingInput: React.FC<Props> = ({ label, type = 'text', value, required = false, placeholder, disabled = false, onChange, className }) => {
+  // const { label, type = 'text', value, placeholder, required = false, onChange } = props;
   const [focused, setFocused] = useState(false);
 
   const shouldFloat = focused || value.length > 0;
 
   return (
-    <div className="relative w-full mt-4">
+    <div className={`relative w-full mt-4 ${className}`}>
       <input
         type={type}
         value={value}
@@ -27,6 +29,7 @@ const LabelNestingInput: React.FC<Props> = (props) => {
         // className="w-full px-3 pt-6 pb-2 text-sm bg-transparent border border-gray-500 rounded-md text-white placeholder-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
         className="w-full px-3 pt-6 pb-2 text-sm bg-transparent border border-gray-500 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         placeholder={placeholder}
+        disabled={disabled}
       />
       <label
         className={`absolute left-3 transition-all text-sm ${

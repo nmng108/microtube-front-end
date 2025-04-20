@@ -3,13 +3,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { Link, useSearchParams } from 'react-router';
 import { StyledTrending } from './Trending';
-import TrendingCard from '../components/TrendingCard';
+import RectangleVideoCard from '@components/RectangleVideoCard.tsx';
 import NoResults from '../components/NoResults';
-import ChannelInfo from '../components/ChannelInfo';
+import ChannelCard from '@components/ChannelCard.tsx';
 import Skeleton from '../skeletons/TrendingSkeleton';
-import { clearSearchResults, getSearchResults, SearchingStatus, SearchResultState } from '../reducers/searchResult.ts';
-import { isNotBlank } from '@utilities';
-import { RootDispatch, RootState } from '@redux-store.ts';
+import { clearSearchResults, getSearchResults, SearchingStatus, SearchResultState } from '@reducers/searchResult.ts';
+import { isBlank, isNotBlank } from '@utilities';
+import type { RootDispatch, RootState } from '@redux-store.ts';
+import { ROUTES } from '@constants';
 
 const StyledChannels = styled.div`
     margin-top: 1rem;
@@ -35,6 +36,10 @@ const SearchResults = () => {
     };
   }, [dispatch, queryString]);
 
+  if (!queryString || isBlank(queryString)) {
+    return <NoResults title="No result" text="Enter keywords to search" />;
+  }
+
   if (status == SearchingStatus.IS_FETCHING) {
     return <Skeleton title="true" />;
   }
@@ -48,18 +53,16 @@ const SearchResults = () => {
       <h2>Search Results</h2>
 
       <StyledChannels>
-        {channelSearchResult.total > 0 &&
-          channelSearchResult.dataset.map((channel) => (
-            <ChannelInfo key={channel.id} search={true} channel={channel} />
-          ))}
+        {channelSearchResult.total > 0 && channelSearchResult.dataset.map((channel, index) => (
+          <ChannelCard key={index} search={true} channel={channel} />
+        ))}
       </StyledChannels>
 
-      {videoSearchResult.total > 0 &&
-        videoSearchResult.dataset.map((video) => (
-          <Link key={video.id} to={`/watch/${video.code}`}>
-            <TrendingCard video={video} />
-          </Link>
-        ))}
+      {videoSearchResult.total > 0 && videoSearchResult.dataset.map((video, index) => (
+        <Link key={index} to={`${ROUTES.WATCH}/${video.code}`}>
+          <RectangleVideoCard video={video} />
+        </Link>
+      ))}
     </StyledTrending>
   );
 };

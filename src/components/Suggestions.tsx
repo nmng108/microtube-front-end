@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import ChannelInfo from "./ChannelInfo";
+import ChannelCard from "./ChannelCard.tsx";
 import { StyledTrending } from "../pages/Trending";
 import Skeleton from "../skeletons/SuggestionSkeleton";
 import { ChannelRecommendation, getChannels } from '@reducers/channelRecommendation';
@@ -22,7 +22,7 @@ const Suggestions = () => {
     <StyledTrending>
       <h2>Suggestions For You</h2>
       {channels?.map((channel) => (
-        <ChannelInfo key={channel.id} channel={channel} />
+        <ChannelCard key={channel.id} channel={channel} />
       ))}
     </StyledTrending>
   );

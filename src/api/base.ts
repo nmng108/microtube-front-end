@@ -23,24 +23,24 @@ export abstract class AbstractHttpResource {
     return this._basePath;
   }
 
-  doGet<P, S, E = S>(path?: string | number, params?: P, axiosConfig?: AxiosRequestConfig): Promise<ApiResponse<S, E>> {
-    return this._apisauceInstance.get<S, E>(this.pathBuilder(path), params, axiosConfig).then(redirectOn401);
+  doGet<P, S, E = S>(path?: string | number, params?: P, axiosConfig?: AxiosRequestConfig, redirectsOn401: boolean = true): Promise<ApiResponse<S, E>> {
+    return this._apisauceInstance.get<S, E>(this.pathBuilder(path), params, axiosConfig).then((res) => redirectsOn401 ? redirectOn401(res) : res);
   }
 
-  doDelete<P, S, E = S>(path?: string | number, params?: P, axiosConfig?: AxiosRequestConfig): Promise<ApiResponse<S, E>> {
-    return this._apisauceInstance.delete<S, E>(this.pathBuilder(path), params, axiosConfig).then(redirectOn401);
+  doDelete<P, S, E = S>(path?: string | number, params?: P, axiosConfig?: AxiosRequestConfig, redirectsOn401: boolean = true): Promise<ApiResponse<S, E>> {
+    return this._apisauceInstance.delete<S, E>(this.pathBuilder(path), params, axiosConfig).then((res) => redirectsOn401 ? redirectOn401(res) : res);
   }
 
-  doPost<R, S, E = S>(path?: string | number, data?: R, axiosConfig?: AxiosRequestConfig): Promise<ApiResponse<S, E>> {
-    return this._apisauceInstance.post<S, E>(this.pathBuilder(path), data, axiosConfig).then(redirectOn401);
+  doPost<R, S, E = S>(path?: string | number, data?: R, axiosConfig?: AxiosRequestConfig, redirectsOn401: boolean = true): Promise<ApiResponse<S, E>> {
+    return this._apisauceInstance.post<S, E>(this.pathBuilder(path), data, axiosConfig).then((res) => redirectsOn401 ? redirectOn401(res) : res);
   }
 
-  doPut<R, S, E = S>(path?: string | number, data?: R, axiosConfig?: AxiosRequestConfig): Promise<ApiResponse<S, E>> {
-    return this._apisauceInstance.put<S, E>(this.pathBuilder(path), data, axiosConfig).then(redirectOn401);
+  doPut<R, S, E = S>(path?: string | number, data?: R, axiosConfig?: AxiosRequestConfig, redirectsOn401: boolean = true): Promise<ApiResponse<S, E>> {
+    return this._apisauceInstance.put<S, E>(this.pathBuilder(path), data, axiosConfig).then((res) => redirectsOn401 ? redirectOn401(res) : res);
   }
 
-  doPatch<R, S, E = S>(path?: string | number, data?: R, axiosConfig?: AxiosRequestConfig): Promise<ApiResponse<S, E>> {
-    return this._apisauceInstance.patch<S, E>(this.pathBuilder(path), data, axiosConfig).then(redirectOn401);
+  doPatch<R, S, E = S>(path?: string | number, data?: R, axiosConfig?: AxiosRequestConfig, redirectsOn401: boolean = true): Promise<ApiResponse<S, E>> {
+    return this._apisauceInstance.patch<S, E>(this.pathBuilder(path), data, axiosConfig).then((res) => redirectsOn401 ? redirectOn401(res) : res);
   }
 }
 
@@ -103,13 +103,13 @@ export class RestfulResource extends AbstractHttpResource implements RestfulReso
 }
 
 /**
- * Auto-redirect on 401 response.
+ * An API call middleware which is in charge of auto-redirecting on 401 response.
  */
 // Vite's build tool (esbuild) does not have plan for TS's decorator feature
-function redirectOn401(apiResponse: ApiResponse<never, never>) {
+function redirectOn401<S, E>(apiResponse: ApiResponse<S, E>) {
   if (!apiResponse.ok && apiResponse.status === HttpStatusCode.Unauthorized) {
     localStorage.removeItem('user');
-    redirect(ROUTES.AUTH_LOGIN);
+    location.href = `${ROUTES.AUTH_LOGIN}?continue=${encodeURIComponent(location.pathname + location.search)}`;
   }
 
   return apiResponse;

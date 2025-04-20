@@ -15,8 +15,8 @@ type GetHistoryOutput = {
 
 export const getHistory = createAsyncThunk<GetHistoryOutput, void, BaseAsyncThunkConfig>(
   'history/getHistory',
-  async (args, thunkAPI) => {
-    const { page, size } = thunkAPI.getState().history;
+  async (args, { getState }) => {
+    const { page, size } = getState().history;
     const { ok, problem, data } = await watchHistoryResource.getAll({ page: page + 1, size });
 
     if (ok) {

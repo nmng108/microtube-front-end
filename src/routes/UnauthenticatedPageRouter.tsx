@@ -9,6 +9,11 @@ import SearchResults from '../pages/SearchResults';
 import HomePageContainer from '@pages/homepage/HomePageContainer.tsx';
 import WatchVideo from '@pages/watch/WatchVideo.tsx';
 import { NotFoundErrorPage } from '../pages';
+import Trending from '@pages/Trending.tsx';
+import LikedVideos from '@pages/LikedVideos.tsx';
+import Library from '@pages/Library.tsx';
+import WatchHistory from '@pages/WatchHistory.tsx';
+import SubscriptionsPage from '@pages/SubscriptionsPage.tsx';
 
 const UnauthenticatedPageRouter = createBrowserRouter([
   {
@@ -30,20 +35,47 @@ const UnauthenticatedPageRouter = createBrowserRouter([
     Component: HomePageContainer,
     children: [
       {
+        index: true,
         Component: Home,
       },
       {
-        path: '/watch/:videoId',
+        path: ROUTES.WATCH_WITH_PARAM,
         Component: WatchVideo,
       },
       {
-        path: '/channel/:userId',
+        path: ROUTES.CHANNEL_WITH_PARAM,
         Component: Channel,
       },
       {
-        path: '/results/:searchterm',
+        path: ROUTES.SEARCH,
         Component: SearchResults,
       },
+
+      {
+        path: '/trending',
+        Component: Trending,
+      },
+      {
+        path: '/subscriptions',
+        Component: SubscriptionsPage,
+      },
+      {
+        path: ROUTES.LIKED_VIDEOS,
+        Component: LikedVideos,
+      },
+      {
+        path: '/library',
+        Component: Library,
+      },
+      // {
+      //   path: '/my-videos',
+      //   Component: YourVideos,
+      // },
+      {
+        path: ROUTES.WATCH_HISTORY,
+        Component: WatchHistory,
+      },
+
       {
         path: '*', // This catches any unmatched routes
         Component: NotFoundErrorPage,

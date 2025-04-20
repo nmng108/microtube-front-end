@@ -9,22 +9,13 @@ import ChannelTabAbout from '@pages/channel/ChannelTabAbout.tsx';
 import NoResults from '@components/NoResults';
 import Button from '@styles/Button';
 import Skeleton from '@skeletons/ChannelSkeleton';
-
-import { addChannel, removeChannel } from '@reducers/user';
-import {
-  changeSubscriptionState,
-  clearChannel,
-  getChannel,
-  addSubscription,
-  removeSubscription,
-} from '@reducers/channel';
-import { addChannelLocalSt, client, removeChannelLocalSt } from '@utils';
+import { changeSubscriptionState, clearChannel, getChannel } from '@reducers/channel';
 import type { RootDispatch, RootState } from '@redux-store.ts';
 import type { StyledComponentProps } from '@styles/StyledComponentProps.ts';
 import { ChannelState, ChannelStateStatus } from '@models/channel.ts';
 import type { UserStateData } from '@models/authUser.ts';
 
-import defaultAvatar from '../../assets/default-avatar.svg';
+import defaultAvatar from '@assets/default-avatar.svg';
 
 const activeTabStyle = {
   borderBottom: '2px solid white',
@@ -132,13 +123,6 @@ const Channel = () => {
     // addChannelLocalSt(channel);
     // client(`${process.env.REACT_APP_BE}/users/${channel.id}/togglesubscribe`);
   }, [dispatch]);
-
-  const handleUnsubscribe = () => {
-    dispatch(changeSubscriptionState());
-    // dispatch(removeChannel(channelId));
-    // removeChannelLocalSt(channelId);
-    // client(`${process.env.REACT_APP_BE}/users/${channelId}/togglesubscribe`);
-  };
 
   useEffect(() => {
     dispatch(getChannel(pathname));

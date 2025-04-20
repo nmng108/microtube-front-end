@@ -17,13 +17,14 @@ import { videoResource } from '@api';
 
 export const getChannel = createAsyncThunk<ChannelStateData, number | string, BaseAsyncThunkConfig>(
   'channel/getById',
-  async (id: number | string, thunk): Promise<ChannelStateData> => {
-    const { getState } = thunk;
+  async (id: number | string, { getState, dispatch }): Promise<ChannelStateData> => {
     const { ok, problem, data } = await channelResource.get(id);
 
     if (ok) {
       const newChannelState = toChannelStateData(data.data);
       newChannelState.isOwned = (newChannelState.userId === getState().user.data.id);
+
+      dispatch(fetchChannelVideos(newChannelState.id));
 
       return newChannelState;
     }
@@ -104,20 +105,18 @@ export const uploadChannelAvatar = createAsyncThunk<string, File, BaseAsyncThunk
   },
 );
 
-export const fetchChannelVideos = createAsyncThunk<Array<ConciseVideoData>, void, BaseAsyncThunkConfig>(
+export const fetchChannelVideos = createAsyncThunk<Array<ConciseVideoData>, number, BaseAsyncThunkConfig>(
   'channel/videos',
-  async (args, thunkAPI) => {
-    const { getState } = thunkAPI;
+  async (channelId, { getState }) => {
+    // if (!getState().channel.data?.id) {
+    //   throw new Error('No channel selected');
+    // }
 
-    if (!getState().channel.data?.id) {
-      throw new Error('No channel selected');
-    }
+    const { ok, problem, data } = await videoResource.getAll({ channelId: channelId });
 
-    const { ok, problem, data } = await videoResource.getAll({channelId: getState().channel.data.id});
+    if (ok) return data.data.dataset?.map(toDetailVideoData);
 
-    if (ok) return data.data.dataset.map(toDetailVideoData);
-
-    console.error(`Error uploading channel avatar. Reason: ${problem}`);
+    console.error(`Error fetching videos. Reason: ${problem}`);
 
     if (data.status === -1) {
       switch (data.errorCode) {
@@ -134,8 +133,8 @@ export const fetchChannelVideos = createAsyncThunk<Array<ConciseVideoData>, void
 
 export const changeSubscriptionState = createAsyncThunk<void, void, BaseAsyncThunkConfig>(
   'channel/subscription',
-  async (args, thunkAPI) => {
-    const channel = thunkAPI.getState().channel.data;
+  async (args, { getState, dispatch }) => {
+    const channel = getState().channel.data;
 
     if (!channel?.id) {
       throw new Error('No channel selected');
@@ -144,9 +143,7 @@ export const changeSubscriptionState = createAsyncThunk<void, void, BaseAsyncThu
     const { ok, problem, data } = await channelResource.changeSubscriptionState(channel.id, !channel.subscribed);
 
     if (ok) {
-      thunkAPI.dispatch(channel.subscribed
-        ? channelSlice.actions.removeSubscription()
-        : channelSlice.actions.addSubscription());
+      dispatch(channelSlice.actions.switchSubscriptionState());
 
       return;
     }
@@ -175,30 +172,22 @@ const channelSlice = createSlice({
   name: 'channel',
   initialState,
   reducers: {
+    switchSubscriptionState(state) {
+      state.data = {
+        ...state.data,
+        subscriptionCount: state.data.subscriptionCount + (state.data.subscribed ? -1 : 1),
+        subscribed: !state.data.subscribed,
+      };
+    },
     clearChannel(state) {
       state = initialState;
       // state.status = initialState.status;
       // state.data = initialState.data;
     },
-    addSubscription(state) {
-      state.data = {
-        ...state.data,
-        subscriptionCount: state.data.subscriptionCount + 1,
-        subscribed: !state.data.subscribed,
-      };
-    },
-    removeSubscription(state) {
-      state.data = {
-        ...state.data,
-        subscriptionCount: state.data.subscriptionCount - 1,
-        subscribed: !state.data.subscribed,
-      };
-    },
   },
   extraReducers: (builder) => {
     builder.addCase(getChannel.pending, (state) => {
       state.status = ChannelStateStatus.IS_FETCHING;
-      console.log('caught getChannel.pending; change status');
     });
     builder.addCase(getChannel.fulfilled, (state, action) => {
       state.data = action.payload;
@@ -207,12 +196,24 @@ const channelSlice = createSlice({
     builder.addCase(getChannel.rejected, (state, action) => {
       state.data = {} as ChannelStateData;
       state.status = ChannelStateStatus.FETCHING_FAILED;
-      state.problemMessage = 'sth err'
+      state.problemMessage = 'sth err';
+    });
+
+    builder.addCase(fetchChannelVideos.pending, (state) => {
+      state.status = ChannelStateStatus.IS_FETCHING_VIDEOS;
+    });
+    builder.addCase(fetchChannelVideos.fulfilled, (state, action) => {
+      state.data.videos = action.payload;
+      state.status = ChannelStateStatus.FETCHING_VIDEOS_SUCCEEDED;
+    });
+    builder.addCase(fetchChannelVideos.rejected, (state, action) => {
+      state.status = ChannelStateStatus.FETCHING_VIDEOS_FAILED;
+      console.error('Error fetching channel\'s videos.', action);
+      state.problemMessage = 'Cannot fetch channel\'s videos';
     });
 
     builder.addCase(updateChannel.pending, (state) => {
       state.status = ChannelStateStatus.IS_UPDATING;
-      console.info('caught channel.pending');
     });
     builder.addCase(updateChannel.fulfilled, (state, action) => {
       state.data = action.payload;
@@ -221,44 +222,31 @@ const channelSlice = createSlice({
     builder.addCase(updateChannel.rejected, (state, action) => {
       state.status = ChannelStateStatus.UPDATE_FAILED;
       console.error('Error updating channel info. ', action);
-      state.problemMessage = 'sth err'
+      state.problemMessage = 'sth err';
     });
 
     builder.addCase(uploadChannelAvatar.pending, (state) => {
-      state.status = ChannelStateStatus.IS_UPDATING;
+      state.status = ChannelStateStatus.IS_UPLOADING;
       console.log('caught uploadChannelAvatar.pending');
     });
     builder.addCase(uploadChannelAvatar.fulfilled, (state, action) => {
       state.data.avatar = action.payload;
-      state.status = ChannelStateStatus.UPDATE_SUCCEEDED;
+      state.status = ChannelStateStatus.UPLOAD_SUCCEEDED;
     });
     builder.addCase(uploadChannelAvatar.rejected, (state, action) => {
-      state.status = ChannelStateStatus.UPDATE_FAILED;
+      state.status = ChannelStateStatus.UPLOAD_FAILED;
       console.error('Error uploading channel avatar.', action);
-      state.problemMessage = 'sth err'
-    });
-    builder.addCase(fetchChannelVideos.fulfilled, (state, action) => {
-      state.data.videos = action.payload;
-      state.status = ChannelStateStatus.FETCHING_SUCCEEDED;
-    });
-    builder.addCase(fetchChannelVideos.rejected, (state, action) => {
-      state.status = ChannelStateStatus.FETCHING_FAILED;
-      console.error("Error fetching channel's videos.", action);
-      state.problemMessage = "Cannot fetch channel's videos";
+      state.problemMessage = 'sth err';
     });
   },
 });
 
 const {
   clearChannel,
-  addSubscription,
-  removeSubscription,
 } = channelSlice.actions;
 
 export {
   clearChannel,
-  addSubscription,
-  removeSubscription,
 };
 
 export default channelSlice.reducer;

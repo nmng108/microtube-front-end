@@ -5,11 +5,14 @@ import { Link } from "react-router";
 import Button from "../styles/Button";
 
 // reducers and utils
-import { addChannel, removeChannel } from "../reducers/user";
-import { toggleSubscribeSearchResults } from "../reducers/searchResult.ts";
-import { toggleSubscribeChannelRecommendation } from "../reducers/channelRecommendation";
-import { client, addChannelLocalSt, removeChannelLocalSt } from "../utils";
+import { addChannel, removeChannel } from '@reducers';
+import {
+  changeChannelSubscriptionStateInSearchResult,
+} from '@reducers/searchResult.ts';
+// import { toggleSubscribeChannelRecommendation } from "../reducers/channelRecommendation";
 import { ChannelStateData } from '@models/channel.ts';
+import { RootDispatch } from '@redux-store.ts';
+import defaultAvatar from '@assets/default-avatar.svg';
 
 const Wrapper = styled.div`
   display: flex;
@@ -80,40 +83,38 @@ const Wrapper = styled.div`
 
 type Props = {
   channel: ChannelStateData;
-  search: boolean;
+  search?: boolean;
 }
 
-const ChannelInfo: React.FC<Props> = ({ search, channel }) => {
-  const dispatch = useDispatch();
+const ChannelCard: React.FC<Props> = ({ search, channel }) => {
+  const dispatch = useDispatch<RootDispatch>();
 
   const handleSubscribe = () => {
     if (search) {
-      dispatch(toggleSubscribeSearchResults(channel.id));
+      dispatch(changeChannelSubscriptionStateInSearchResult(channel.id));
     }
 
-    dispatch(toggleSubscribeChannelRecommendation(channel.id));
+    // dispatch(toggleSubscribeChannelRecommendation(channel.id));
 
-    dispatch(addChannel(channel));
-    addChannelLocalSt(channel);
-    client(`${process.env.REACT_APP_BE}/users/${channel.id}/togglesubscribe`);
+    // dispatch(addChannel(channel));
+    // addChannelLocalSt(channel);
   };
 
   const handleUnsubscribe = () => {
     if (search) {
-      dispatch(toggleSubscribeSearchResults(channel.id));
+      dispatch(changeChannelSubscriptionStateInSearchResult(channel.id));
     }
 
-    dispatch(toggleSubscribeChannelRecommendation(channel.id));
+    // dispatch(toggleSubscribeChannelRecommendation(channel.id));
 
-    dispatch(removeChannel(channel.id));
-    removeChannelLocalSt(channel.id);
-    client(`${process.env.REACT_APP_BE}/users/${channel.id}/togglesubscribe`);
+    // dispatch(removeChannel(channel.id));
+    // removeChannelLocalSt(channel.id);
   };
 
   return (
     <Wrapper>
       <Link to={`/channel/${channel.id}`} className="avatar-channel">
-        <img src={channel.avatar} alt="avatar" />
+        <img src={channel.avatar || defaultAvatar} alt="avatar" />
 
         <div className="channel-info-meta">
           <h3>{channel.name}</h3>
@@ -121,7 +122,7 @@ const ChannelInfo: React.FC<Props> = ({ search, channel }) => {
           <p className="secondary">
             <span>{channel.subscriptionCount} subscribers</span>{" "}
             <span className="to-hide">•</span>{" "}
-            {/*<span className="to-hide">{channel.videosCount} videos</span> TODO: make this later*/}
+            <span className="to-hide">{channel.videoCount} videos</span>
           </p>
 
           {channel.description && (
@@ -149,4 +150,4 @@ const ChannelInfo: React.FC<Props> = ({ search, channel }) => {
   );
 };
 
-export default ChannelInfo;
+export default ChannelCard;

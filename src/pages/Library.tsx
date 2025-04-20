@@ -1,10 +1,10 @@
 import React from "react";
 import LikedVideos from "./LikedVideos";
-import History from "./History";
+import WatchHistory from "./WatchHistory.tsx";
 
 const Library = () => (
   <>
-    <History nopad={true} />
+    <WatchHistory nopad={true} />
     <LikedVideos />
   </>
 );
