@@ -12,6 +12,11 @@ import { type BaseAsyncThunkConfig } from '@redux-store.ts';
 import { CommentState, CommentStateData, CommentStateStatus } from '@models/comment.ts';
 import commentResource from '@api/commentResource.ts';
 
+const DEFAULT_COMMENT_FETCH_SIZE: number = 10;
+const DEFAULT_COMMENT_REPLY_FETCH_SIZE: number = 5;
+
+// TODO: make use of rejectWithValue instead of using `throw`
+
 /**
  * Called inside the `WatchVideo` component to fetch detail info of the specified video.
  */
@@ -35,6 +40,34 @@ export const getVideo = createAsyncThunk<DetailVideoData, number | string, BaseA
   },
 );
 
+/**
+ * @return {undefined} if not found.
+ */
+function findCommentRecursively(commentState: CommentState, id: number, level: number): CommentStateData {
+  // Stop immediately if dataset is empty or level of the dataset is larger than specified level.
+  if (commentState?.dataset?.length == 0 || commentState.dataset[0].level > level) {
+    return;
+  }
+
+  for (const commentStateData of commentState.dataset) {
+    if (commentStateData.level < level) {
+      const matchingChild = findCommentRecursively(commentStateData.children, id, level);
+
+      if (matchingChild) return matchingChild;
+    } else if (commentStateData.id == id) {
+      return commentStateData;
+    }
+  }
+}
+
+type GetCommentsArgs = {
+  /**
+   * If not specified, default to level-1 comments.
+   */
+  parentId?: number;
+  parentLevel?: number; // specify this along with parentId to optimize search time
+};
+
 type GetCommentsOutput = {
   dataset: CommentStateData[];
   total: number;
@@ -44,27 +77,45 @@ type GetCommentsOutput = {
 /**
  * Fetch next page with fixed page size.
  */
-export const getComments = createAsyncThunk<GetCommentsOutput, Partial<{ parentId: number }>, BaseAsyncThunkConfig>(
+export const getComments = createAsyncThunk<GetCommentsOutput, GetCommentsArgs, BaseAsyncThunkConfig>(
   'video/getComments',
-  async (args, { getState }) => {
+  async ({ parentId, parentLevel }, { getState }) => {
     const videoId = getState().video.data.code;
 
     if (!videoId) {
       throw new Error('Video is not loaded');
     }
 
-    const { currentPage, size } = getState().video.comment;
+    let page: number;
+    let size: number;
+
+    if (parentId > 0 && parentLevel > 0) {
+      const selectedCommentState = findCommentRecursively(getState().video.comment, parentId, parentLevel);
+
+      if (selectedCommentState) {
+        const { currentPage, size: currentSize } = selectedCommentState.children;
+        [page, size] = [currentPage + 1, currentSize];
+      } else {
+        throw 'Unknown comment';
+      }
+    } else {
+      const { currentPage, size: currentSize } = getState().video.comment;
+      [page, size] = [currentPage + 1, currentSize];
+    }
+
     const { ok, problem, data } = await commentResource.getAll(videoId, {
-      page: currentPage,
-      size,
-      parentId: args.parentId,
+      page, size, parentId,
     });
 
     if (ok) {
       const userId: number | undefined = getState().user.data?.id;
       const paginatedData = data.data;
       const resultComments: CommentStateData[] = paginatedData.dataset.map((c) => {
-        return { ...c, isOwned: (userId > 0) && (userId === c.userId), children: [] };
+        return {
+          ...c,
+          isOwned: (userId > 0) && (userId === c.userId),
+          children: { total: c.childCount, currentPage: 0, size: DEFAULT_COMMENT_REPLY_FETCH_SIZE, dataset: [] },
+        };
       });
 
       return { dataset: resultComments, total: paginatedData.totalRecords, page: paginatedData.current };
@@ -76,7 +127,7 @@ export const getComments = createAsyncThunk<GetCommentsOutput, Partial<{ parentI
 
 type AddCommentArgs = {
   content: string,
-  level: number,
+  level: number, // TODO: level can be inferred from its parent, so consider to omit this
   parentId?: number,
 };
 
@@ -99,26 +150,27 @@ export const addComment = createAsyncThunk<CommentStateData, AddCommentArgs, Bas
     if (ok) {
       const user = getState().user.data;
 
-      return { ...data.data, name: user.name, avatar: user.avatar, isOwned: true, children: [] };
+      return { ...data.data, name: user.name, avatar: user.avatar, isOwned: true };
     }
 
     throw new Error(`Cannot add comment. Reason: ${problem}`);
   },
 );
 
-export const deleteComment = createAsyncThunk<number, number, BaseAsyncThunkConfig>(
+type DeleteCommentArgsOutput = { id: number, level: number, parentId: number };
+export const deleteComment = createAsyncThunk<DeleteCommentArgsOutput, DeleteCommentArgsOutput, BaseAsyncThunkConfig>(
   'video/deleteComment',
-  async (id, { getState }) => {
+  async (args, { getState }) => {
     const videoId = getState().video.data.code;
 
     if (!videoId) {
       throw new Error('Video is not loaded');
     }
 
-    const { ok, problem, data } = await commentResource.delete(id);
+    const { ok, problem, data } = await commentResource.delete(args.id);
 
     if (ok) {
-      return id;
+      return args;
     }
 
     throw new Error(`Cannot add comment. Reason: ${problem}`);
@@ -159,7 +211,7 @@ const initialCommentState: CommentState = {
   dataset: [],
   total: 0,
   currentPage: 0, // increased at every fetch (by calling getComments)
-  size: 50,
+  size: DEFAULT_COMMENT_FETCH_SIZE,
 };
 
 const initialState: VideoState = {
@@ -217,12 +269,34 @@ const videoSlice = createSlice({
       state.comment.status = CommentStateStatus.IS_FETCHING_COMMENT;
     });
     builder.addCase(getComments.fulfilled, (state, action) => {
-      if (action.payload.page !== state.comment.currentPage) {
-        state.comment.dataset = [...state.comment.dataset, ...action.payload.dataset];
-        state.comment.currentPage = action.payload.page;
+      // if (action.payload.dataset.length == 0) return;
+      console.log(action.payload);
+      const parentId = action.payload.dataset?.[0].parentId;
+
+      // If fetching replies of a comment
+      if (parentId) {
+        const parentLevel = action.payload.dataset[0].level - 1;
+        const parentComment = findCommentRecursively(state.comment, parentId, parentLevel);
+
+        if (parentComment?.children) {
+          parentComment.childCount = action.payload.total;
+          parentComment.children = {
+            ...parentComment.children,
+            total: action.payload.total,
+            dataset: [...parentComment.children.dataset, ...action.payload.dataset],
+            currentPage: action.payload.page,
+          };
+        }
+      } else if (action.payload.page !== state.comment.currentPage) {
+        // If fetching a first-level comment
+        state.comment = {
+          ...state.comment,
+          dataset: [...state.comment.dataset, ...action.payload.dataset],
+          currentPage: action.payload.page,
+          total: action.payload.total,
+        };
       }
 
-      state.comment.total = action.payload.total;
       state.comment.status = CommentStateStatus.FETCHING_COMMENTS_SUCCEEDED;
     });
     builder.addCase(getComments.rejected, (state, action) => {
@@ -234,8 +308,32 @@ const videoSlice = createSlice({
       state.comment.status = CommentStateStatus.IS_POSTING_COMMENT;
     });
     builder.addCase(addComment.fulfilled, (state, action) => {
-      state.comment.dataset = [action.payload, ...state.comment.dataset];
-      state.comment.total += 1;
+      const parentId = action.payload.parentId;
+
+      // If replied to a comment
+      if (parentId) {
+        const parentLevel = action.payload.level - 1;
+        const parentComment = findCommentRecursively(state.comment, parentId, parentLevel);
+
+        if (parentComment) {
+          state.data.commentCount += 1;
+          parentComment.childCount += 1;
+          parentComment.children = {
+            ...parentComment.children,
+            dataset: [action.payload, ...parentComment.children.dataset],
+            total: parentComment.childCount,
+          };
+        }
+      } else {
+        // If created a first-level comment
+        state.data.commentCount += 1;
+        state.comment = {
+          ...state.comment,
+          dataset: [action.payload, ...state.comment.dataset],
+          total: state.comment.total + 1,
+        };
+      }
+
       state.comment.status = CommentStateStatus.COMMENTING_SUCCEEDED;
     });
     builder.addCase(addComment.rejected, (state, action) => {
@@ -247,10 +345,27 @@ const videoSlice = createSlice({
       state.comment.status = CommentStateStatus.IS_DELETING_COMMENT;
     });
     builder.addCase(deleteComment.fulfilled, (state, action) => {
-      const deletedIndex = state.comment.dataset.findIndex(v => v.id === action.payload);
+      const { id, parentId, level } = action.payload;
 
-      state.comment.dataset.splice(deletedIndex, 1);
-      state.comment.total -= 1;
+      if (parentId) {
+        const parentComment = findCommentRecursively(state.comment, parentId, level - 1);
+
+        state.data.commentCount -= 1;
+        parentComment.childCount -= 1;
+        parentComment.children.total = parentComment.childCount;
+        const deletedIndex = parentComment.children.dataset.findIndex((c) => c.id === id);
+
+        if (deletedIndex > -1) {
+          parentComment.children.dataset.splice(deletedIndex, 1);
+        }
+      } else {
+        const deletedIndex = state.comment.dataset.findIndex(v => v.id === id);
+
+        state.data.commentCount -= 1;
+        state.comment.total -= 1;
+        state.comment.dataset.splice(deletedIndex, 1);
+      }
+
       state.comment.status = CommentStateStatus.DELETION_SUCCEEDED;
     });
     builder.addCase(deleteComment.rejected, (state, action) => {

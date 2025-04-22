@@ -41,7 +41,7 @@ const SearchResults = () => {
   }
 
   if (status == SearchingStatus.IS_FETCHING) {
-    return <Skeleton title="true" />;
+    return <Skeleton />;
   }
 
   if (status == SearchingStatus.FETCHING_DONE && !videoSearchResult.total && !channelSearchResult.total) {

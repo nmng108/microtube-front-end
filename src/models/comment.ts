@@ -1,5 +1,5 @@
 export interface CommentState {
-  status: CommentStateStatus;
+  status?: CommentStateStatus;
   dataset: CommentStateData[];
   total: number;
   currentPage: number; // min: 1
@@ -11,9 +11,11 @@ export enum CommentStateStatus {
   IS_FETCHING_COMMENT,
   FETCHING_COMMENTS_FAILED,
   FETCHING_COMMENTS_SUCCEEDED,
+
   IS_POSTING_COMMENT,
   COMMENTING_SUCCEEDED,
   COMMENTING_FAILED,
+
   IS_DELETING_COMMENT,
   DELETION_SUCCEEDED,
   DELETION_FAILED,
@@ -33,7 +35,7 @@ export interface CommentStateData extends CommentDTO {
   // createdAt: string;
   // modifiedAt: string;
   isOwned: boolean;
-  children: CommentStateData[]; // TODO: always search for records with the same level/parentId; append child records to this prop
+  children?: CommentState; // TODO: always search for records with the same level/parentId; append child records to this prop
 }
 
 export interface CommentDTO {
@@ -47,6 +49,7 @@ export interface CommentDTO {
   content: string;
   likeCount: number;
   dislikeCount: number;
+  childCount?: number;
   createdAt: string;
   modifiedAt: string;
 }

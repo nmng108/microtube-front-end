@@ -12,6 +12,7 @@ import defaultAvatar from '@assets/default-avatar.svg';
 import { VideoState } from '@models/video.ts';
 import { UserStateData } from '@models/authUser.ts';
 import { CommentState, CommentStateStatus } from '@models/comment.ts';
+import CommentItem from '@pages/watch/CommentItem.tsx';
 
 const Wrapper = styled.div<StyledComponentProps>`
     margin: 1rem 0;
@@ -63,14 +64,16 @@ const Wrapper = styled.div<StyledComponentProps>`
 const CommentSection = () => {
   const dispatch = useDispatch<RootDispatch>();
   const user = useSelector<RootState, UserStateData>((state) => state.user.data);
-  const { problemMessage } = useSelector<RootState, VideoState>((state) => state.video);
+  const { problemMessage, data: video } = useSelector<RootState, VideoState>((state) => state.video);
   const { status, dataset, total } = useSelector<RootState, CommentState>((state) => state.video.comment);
   const commentInput = useInput('');
   const [commentLevel, setCommentLevel] = useState<number>();
   const [commentParentId, setCommentParentId] = useState<number>();
   const focusedCommentTextarea = useRef<HTMLTextAreaElement>();
 
-  const handleAddComment = useCallback(async (e) => {
+  const handleAddComment = useCallback(async (e: React.KeyboardEvent<HTMLTextAreaElement> & {
+    target: HTMLTextAreaElement
+  }) => {
     e.target.style.height = 'auto';
     e.target.style.height = `${e.target.scrollHeight + 10}px`;
 
@@ -86,13 +89,13 @@ const CommentSection = () => {
       textarea.scrollTop = textarea.scrollHeight + 10;
     } else if (e.code === 'Enter') {
       e.preventDefault();
-      // e.target.blur();
-      if (focusedCommentTextarea.current === e.target) {
-        focusedCommentTextarea.current.disabled = true;
-      }
 
       if (!commentInput.value.trim()) {
         return toast.error('Please write a comment');
+      }
+
+      if (focusedCommentTextarea.current === e.target) {
+        focusedCommentTextarea.current.disabled = true;
       }
 
       dispatch(addComment({
@@ -108,6 +111,10 @@ const CommentSection = () => {
     setCommentLevel(level);
     setCommentParentId(parentId);
   }, []);
+
+  const handleLoadMoreComments = useCallback(() => {
+    dispatch(getComments({}));
+  }, [dispatch]);
 
   useEffect(() => {
     dispatch(getComments({}));
@@ -144,7 +151,7 @@ const CommentSection = () => {
 
   return (
     <Wrapper>
-      <h3>{total} comments</h3>
+      <h3>{video.commentCount} comments</h3>
 
       <div className="add-comment">
         <img src={user.avatar ?? defaultAvatar} alt="avatar" />
@@ -157,26 +164,30 @@ const CommentSection = () => {
         />
       </div>
 
-      {dataset && dataset.map((comment) => (
-        <div key={comment.id} className="comment">
-          <Link to={`/user/${comment.id}`}>
-            <img src={comment.avatar || defaultAvatar} alt="avatar" />
-          </Link>
-          <div className="comment-info">
-            <p className="secondary">
-              <span>
-                <Link to={`/user/${comment.userId}`}>
-                  {comment.name}
-                </Link>
-              </span>
-              <span style={{ marginLeft: '0.6rem' }}>
-                {timeSince(new Date(comment.createdAt).getTime())} ago
-              </span>
-            </p>
-            <p className="whitespace-pre-line">{comment.content}</p>
-          </div>
-        </div>
+      {dataset && dataset.map((comment, index) => (
+        <CommentItem key={index} comment={comment} />
+        // <div key={comment.id} className="comment">
+        //   <Link to={`/user/${comment.id}`}>
+        //     <img src={comment.avatar || defaultAvatar} alt="avatar" />
+        //   </Link>
+        //   <div className="comment-info">
+        //     <p className="secondary">
+        //       <span>
+        //         <Link to={`/user/${comment.userId}`}>
+        //           {comment.name}
+        //         </Link>
+        //       </span>
+        //       <span style={{ marginLeft: '0.6rem' }}>
+        //         {timeSince(new Date(comment.createdAt).getTime())} ago
+        //       </span>
+        //     </p>
+        //     <p className="whitespace-pre-line">{comment.content}</p>
+        //   </div>
+        // </div>
       ))}
+      {dataset.length < total && (
+        <a onClick={handleLoadMoreComments} className="underline text-blue-600 cursor-pointer">Load more comments...</a>
+      )}
     </Wrapper>
   );
 };

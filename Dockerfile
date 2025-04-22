@@ -26,12 +26,14 @@ ENTRYPOINT ["yarn", "dev"]
 CMD ["--host"]
 
 FROM base AS build
+WORKDIR /app
+
+ARG MAIN_BACKEND_SERVER_ADDRESS
+ARG MAIN_BACKEND_SERVER_BASE_PATH
 COPY .env* .
 RUN yarn build
 
 FROM nginx:${NGINX_VERSION}-alpine AS production
-ARG MAIN_BACKEND_SERVER_ADDRESS
-ARG MAIN_BACKEND_SERVER_BASE_PATH
 COPY --from=build /app/dist /usr/share/nginx/html
 
 ENTRYPOINT [ "nginx", "-g", "daemon off;" ]

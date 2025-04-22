@@ -1,21 +1,22 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { Link } from 'react-router';
 import { toast } from 'react-toastify';
 import useInput from '@hooks/useInput';
-import { addComment, deleteComment } from '@reducers';
+import { addComment, clearCommentStatus, deleteComment, getComments } from '@reducers';
 import { timeSince } from '@utils';
 import { StyledComponentProps } from '@styles/StyledComponentProps';
 import { RootDispatch, RootState } from '@redux-store.ts';
 import defaultAvatar from '@assets/default-avatar.svg';
 import { UserStateData } from '@models/authUser.ts';
-import { CommentStateData } from '@models/comment';
+import { CommentState, CommentStateData, CommentStateStatus } from '@models/comment';
 import { IconButton } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ReplyIcon from '@mui/icons-material/Reply';
+import { VideoState } from '@models/video.ts';
 
-type Wrapper = StyledComponentProps & {commentLevel: number};
+type Wrapper = StyledComponentProps & { commentLevel: number };
 
 const Wrapper = styled.div<Wrapper>`
     margin: 1rem 0;
@@ -131,13 +132,16 @@ const Wrapper = styled.div<Wrapper>`
 
 interface CommentItemProps {
   comment: CommentStateData;
-  onReply: (element: HTMLTextAreaElement, parentId: number) => void;
+  onReply?: (element: HTMLTextAreaElement, parentId: number) => void;
 }
 
 const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply }) => {
   const dispatch = useDispatch<RootDispatch>();
   const user = useSelector<RootState, UserStateData>((state) => state.user.data);
+  const { problemMessage } = useSelector<RootState, VideoState>((state) => state.video);
+  const { status } = useSelector<RootState, CommentState>((state) => state.video.comment);
   const [isReplying, setIsReplying] = useState(false);
+  const [showsReplies, setShowsReplies] = useState(comment?.children?.total == 0);
   const replyInput = useInput('');
   const focusedReplyTextarea = useRef<HTMLTextAreaElement>(null);
 
@@ -147,10 +151,10 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply }) => {
     setTimeout(() => {
       if (focusedReplyTextarea.current) {
         focusedReplyTextarea.current.focus();
-        onReply(focusedReplyTextarea.current, comment.id);
+        // onReply(focusedReplyTextarea.current, comment.id);
       }
     }, 0);
-  }, [comment.id, onReply]);
+  }, []);
 
   const handleReplySubmit = useCallback(async (e: React.KeyboardEvent<HTMLTextAreaElement> & {
     target: HTMLTextAreaElement
@@ -160,6 +164,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply }) => {
 
     if (e.shiftKey && e.code === 'Enter') {
       e.preventDefault();
+
       const textarea = e.target;
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
@@ -169,6 +174,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply }) => {
       textarea.scrollTop = textarea.scrollHeight + 10;
     } else if (e.code === 'Enter') {
       e.preventDefault();
+
       if (!replyInput.value.trim()) {
         return toast.error('Please write a reply');
       }
@@ -179,19 +185,41 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply }) => {
 
       dispatch(addComment({
         content: replyInput.value,
-        level: 2,
+        level: comment.level + 1,
         parentId: comment.id,
       }));
       setIsReplying(false);
-      replyInput.setValue('');
     }
-  }, [comment.id, dispatch, replyInput]);
+  }, [comment.id, comment.level, dispatch, replyInput]);
 
   const handleDeleteClick = useCallback(() => {
     if (window.confirm('Are you sure you want to delete this comment?')) {
-      dispatch(deleteComment(comment.id));
+      dispatch(deleteComment({ id: comment.id, parentId: comment.parentId, level: comment.level }));
     }
-  }, [comment.id, dispatch]);
+  }, [comment.id, comment.level, comment.parentId, dispatch]);
+
+  const handleShowHideReplies = useCallback(() => {
+    setShowsReplies((prev) => !prev);
+  }, []);
+
+  const handleLoadMoreReplies = useCallback(() => {
+    setShowsReplies(true);
+    dispatch(getComments({ parentId: comment.id, parentLevel: comment.level }));
+  }, [comment.id, comment.level, dispatch]);
+
+  useEffect(() => {
+    if (status == CommentStateStatus.COMMENTING_SUCCEEDED) {
+      if (focusedReplyTextarea.current) {
+        focusedReplyTextarea.current.disabled = false;
+      }
+
+      replyInput.setValue('');
+    } else if (status == CommentStateStatus.COMMENTING_FAILED) {
+      if (focusedReplyTextarea.current) {
+        focusedReplyTextarea.current.disabled = false;
+      }
+    }
+  }, [replyInput, problemMessage, status, dispatch]);
 
   return (
     <Wrapper className="comment-item" commentLevel={comment.level}>
@@ -206,33 +234,60 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply }) => {
           </p>
           <p className="whitespace-pre-line">{comment.content}</p>
           <div className="comment-actions">
-            <button type="button" onClick={handleReplyClick}>
-              <ReplyIcon style={{ fontSize: '1rem' }} /> Reply
+            <button type="button" onClick={handleReplyClick} style={{fontSize: 'inherit'}}>
+              <ReplyIcon style={{ fontSize: '1rem' }} /> <span>Reply</span>
             </button>
-            {user?.id === comment.userId && (
+            {comment.isOwned && (
               <IconButton onClick={handleDeleteClick} size="small" aria-label="delete">
                 <DeleteIcon style={{ fontSize: '1rem' }} />
               </IconButton>
+            )}
+            {comment.childCount > 0 && (
+              <span>{comment.childCount} {comment.childCount > 1 ? 'replies' : 'reply'}</span>
             )}
           </div>
           {isReplying && (
             <div className="reply-form">
               <img src={user?.avatar || defaultAvatar} alt="avatar" />
               <textarea
+                ref={focusedReplyTextarea}
                 placeholder="Reply to this comment"
                 value={replyInput.value}
                 onKeyDown={handleReplySubmit}
                 onChange={replyInput.onChange}
-                ref={focusedReplyTextarea}
                 onFocus={(e) => onReply(e.target, comment.id)}
               />
             </div>
           )}
+          {(comment.level < 3) && (
+            <>
+              {((comment.children?.total > 0) && (!showsReplies || (comment.children.dataset.length == 0))) && (
+                <a onClick={(comment.children.dataset.length == 0) ? handleLoadMoreReplies : handleShowHideReplies}
+                   className="underline text-blue-600 cursor-pointer">
+                  See replies
+                </a>
+              )}
+              {showsReplies && (comment.children.dataset.length > 0) && (
+                <a onClick={handleShowHideReplies} className="underline text-blue-600 cursor-pointer">
+                  Hide replies
+                </a>
+              )}
+              {showsReplies && (
+                <>
+                  {comment.children?.total > 0 && comment.children.dataset.map((childComment) => (
+                    <CommentItem key={childComment.id} comment={childComment} onReply={onReply} />
+                  ))}
+                  {/*comment.level < 2 /*Limit maximum level to 2 &&*/ (comment.children?.total > 0) && (comment.children.dataset.length > 0) && (comment.children.dataset.length < comment.children.total) && (
+                    <a onClick={handleLoadMoreReplies} className="underline text-blue-600 cursor-pointer">
+                      Load more replies...
+                    </a>
+                  )}
+                </>
+              )}
+            </>
+          )}
         </div>
       </div>
-      {/*{comment.children && comment.children.map((childComment) => (*/}
-      {/*  <CommentItem key={childComment.id} comment={childComment} onReply={onReply} />*/}
-      {/*))}*/}
     </Wrapper>
   );
 };

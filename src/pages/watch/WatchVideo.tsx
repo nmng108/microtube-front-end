@@ -47,6 +47,7 @@ import { ROUTES } from '@constants';
 import RectangleVideoCard from '@components/RectangleVideoCard.tsx';
 import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Icon } from '@mui/material';
 import { toast } from 'react-toastify';
+import RecommendedVideoCard from '@pages/watch/RecommendedVideoCard.tsx';
 
 interface VideoAction {
   name: string;
@@ -68,6 +69,7 @@ const MoreVideoOptions: React.FC<MoreVideoOptions> = ({ video, usesVerticalIcon 
   const [showsUpdateModal, setShowsUpdateModal] = useState<boolean>(false);
   const [showsDeletionConfirmation, setShowsDeletionConfirmation] = useState<boolean>(false);
   const moreIconRef = useRef<SVGSVGElement>();
+  const actionListElement = useRef<HTMLDivElement>();
   const MoreIcon = useMemo(() => usesVerticalIcon ? MoreVertRoundedIcon : MoreHorizRoundedIcon, [usesVerticalIcon]);
   const navigate = useNavigate();
 
@@ -95,7 +97,7 @@ const MoreVideoOptions: React.FC<MoreVideoOptions> = ({ video, usesVerticalIcon 
         toast.error('Connection error. Try again later.');
       }
     }
-  }, [navigate, ownedChannel.pathname, video.code]);
+  }, [navigate, ownedChannel?.pathname, video.code]);
 
   useEffect(() => {
     if (video.isOwned) {
@@ -118,7 +120,9 @@ const MoreVideoOptions: React.FC<MoreVideoOptions> = ({ video, usesVerticalIcon 
     const handleClickOutside = (event: MouseEvent) => {
       if (
         moreIconRef.current &&
-        !moreIconRef.current.contains(event.target as Node)
+        // 2 below conditions is unnecessary in this case
+        !moreIconRef.current.contains(event.target as Node) &&
+        !actionListElement.current?.contains(event.target as Node)
       ) {
         setShowsMoreActions(false);
       }
@@ -141,7 +145,7 @@ const MoreVideoOptions: React.FC<MoreVideoOptions> = ({ video, usesVerticalIcon 
     <div className="relative">
       <MoreIcon ref={moreIconRef} onClick={() => setShowsMoreActions((prev) => !prev)} className="block" />
       {showsMoreActions && (
-        <div className="absolute right-0 w-32 py-2 box-border rounded-sm bg-[#202020]">
+        <div ref={actionListElement} className="absolute right-0 w-32 py-2 box-border rounded-sm bg-[#202020]">
           {actions.map((element, index) => (
             <div key={index} onClick={element.action}
                  className="flex px-2 bg-[#202020] hover:bg-[#383838] cursor-pointer items-center space-x-2">
@@ -244,10 +248,6 @@ const Wrapper = styled.div<Wrapper>`
 
     .related-videos img {
         height: 140px;
-    }
-
-    .related-videos div {
-        margin-bottom: 1rem;
     }
 
     svg {
@@ -493,7 +493,7 @@ const WatchVideo = () => {
           // .slice(0, 3)
           .map((video: DetailVideoData, index) => (
             <Link key={index} to={`${ROUTES.WATCH}/${video.code}`}>
-              <RectangleVideoCard key={video.id} video={video} hidesAvatar={true} />
+              <RecommendedVideoCard key={video.id} video={video} hidesAvatar={true} hidesDescription={true} />
             </Link>
           ))}
       </div>

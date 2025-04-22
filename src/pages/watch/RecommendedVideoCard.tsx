@@ -15,14 +15,14 @@ const Wrapper = styled.div`
 
     .thumb {
         align-items: center;
-        width: 28%;
+        width: 35%;
         aspect-ratio: 16/9;
         box-shadow: 0px 1px 5px 0px rgba(0, 0, 0, 0.2);
         border-radius: 4px;
     }
 
     .video-info-container {
-        width: 70%;
+        width: 63%;
     }
 
     p {
@@ -85,7 +85,7 @@ type Props = {
   hidesDescription?: boolean;
 }
 
-const RectangleVideoCard: React.FC<Props> = ({ video, hidesAvatar, hidesChannelName, hidesDescription }) => {
+const RecommendedVideoCard: React.FC<Props> = ({ video, hidesAvatar, hidesChannelName, hidesDescription }) => {
   const navigate = useNavigate();
 
   const openChannel = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
@@ -102,15 +102,8 @@ const RectangleVideoCard: React.FC<Props> = ({ video, hidesAvatar, hidesChannelN
                className="w-auto h-auto max-w-full max-h-full rounded-md mx-auto my-auto" />
         )}
       </div>
-      <div className="video-info-container space-y-2">
-        <h4>{(video.title?.length > 40) ? video.title.substring(0, 40) + '...' : video.title}</h4>
-        <p className="secondary">
-          <span>{(video.status == VideoStatusEnum.READY) ? `${video.viewCount || 0} views` : `Being processed`}</span>
-          <span>•&nbsp;{timeSince(video.createdAt)} ago</span>
-        </p>
-        {!hidesDescription && (
-          <p className="secondary text-sm" dangerouslySetInnerHTML={{ __html: video.description }}></p>
-        )}
+      <div className="video-info-container space-y-1">
+        <h4 className="text-sm">{(video.title?.length > 40) ? video.title.substring(0, 40) + '...' : video.title}</h4>
         <div onClick={openChannel} className="flex items-center space-x-2 text-sm">
           {!hidesAvatar && (
             <Avatar
@@ -119,12 +112,19 @@ const RectangleVideoCard: React.FC<Props> = ({ video, hidesAvatar, hidesChannelN
             />
           )}
           {!hidesChannelName && (
-            <span className="secondary hover:text-gray-200">{video.channelName}</span>
+            <span className="secondary hover:text-gray-200" style={{fontSize: '0.8rem'}}>{video.channelName}</span>
           )}
         </div>
+        <p className="secondary" style={{fontSize: '0.8rem'}}>
+          <span>{(video.status == VideoStatusEnum.READY) ? `${video.viewCount || 0} views` : `Being processed`}</span>
+          <span>•&nbsp;{timeSince(video.createdAt)} ago</span>
+        </p>
+        {/*{!hidesDescription && (*/}
+        {/*  <p className="secondary text-sm" dangerouslySetInnerHTML={{ __html: video.description }}></p>*/}
+        {/*)}*/}
       </div>
     </Wrapper>
   );
 };
 
-export default RectangleVideoCard;
+export default RecommendedVideoCard;

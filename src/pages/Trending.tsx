@@ -6,6 +6,7 @@ import RectangleVideoCard from "@components/RectangleVideoCard.tsx";
 import Skeleton from "../skeletons/TrendingSkeleton";
 import { getTrending } from "../reducers/trending";
 import type { RootDispatch, RootState } from '../redux-store.js';
+import { RecommendationListState } from '@models/video.ts';
 
 type StyledTrending = {nopad?: boolean};
 
@@ -28,7 +29,8 @@ export const StyledTrending = styled.div<StyledTrending>`
 
 const Trending = () => {
   const dispatch = useDispatch<RootDispatch>();
-  const { isFetching, videos } = useSelector<RootState, unknown>((state) => state.trending);
+  // const { isFetching, videos } = useSelector<RootState, unknown>((state) => state.trending);
+  const { isFetching, videos } = useSelector<RootState, RecommendationListState>((state) => state.recommendation);
 
   useEffect(() => {
     dispatch(getTrending());

@@ -44,6 +44,7 @@ export interface DetailVideoData extends ConciseVideoData {
   disliked: boolean;
   likeCount: number;
   dislikeCount: number;
+  commentCount: number;
   modifiedAt: number; // different from DTO
   modifiedBy: number;
 }
@@ -81,8 +82,9 @@ export interface VideoDTO {
   url?: string;
   reaction?: VideoReactionEnum; // true: liked, false: disliked, null|undefined: none
   viewCount: number;
-  likeCount: number;
-  dislikeCount: number;
+  likeCount?: number;
+  dislikeCount?: number;
+  commentCount?: number;
   createdAt: string;
   createdBy: number;
   modifiedAt: string;
@@ -164,6 +166,7 @@ export function toDetailVideoData(videoDTO: VideoDTO): DetailVideoData {
     viewCount: videoDTO.viewCount,
     likeCount: videoDTO.likeCount || 0,
     dislikeCount: videoDTO.dislikeCount || 0,
+    commentCount: videoDTO.commentCount || 0,
     createdAt: new Date(videoDTO.createdAt).getTime(),
     createdBy: videoDTO.createdBy,
     modifiedAt: videoDTO.modifiedAt ? new Date(videoDTO.modifiedAt).getTime() : null,
