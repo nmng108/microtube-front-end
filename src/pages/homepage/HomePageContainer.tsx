@@ -8,7 +8,6 @@ import BottomBar from '@components/BottomBar';
 import Sidebar from '@pages/homepage/Sidebar.tsx';
 import Container from '@styles/Container';
 import type { RootState } from '@redux-store.ts';
-import { ROUTES } from '@constants';
 import { isNotBlank } from '@utilities';
 
 const HomePageContainer: React.FC = () => {
@@ -17,9 +16,6 @@ const HomePageContainer: React.FC = () => {
 
   useEffect(() => {
     if (username && isNotBlank(username)) return;
-
-    // Route to login page in case user's info had been deleted from the redux store
-    // navigate(ROUTES.AUTH_LOGIN);
   }, [navigate, username]);
 
   return (

@@ -30,14 +30,14 @@ export const getVideo = createAsyncThunk<DetailVideoData, number | string, BaseA
       const ownedChannelId: number | undefined = getState().user.data?.ownedChannel?.id;
 
       if (ownedChannelId > 0) {
-        resultStateData.isOwned = (ownedChannelId === data.data.channelId);
+        resultStateData.isOwned = ownedChannelId === data.data.channelId;
       }
 
       return resultStateData;
     }
 
     throw new Error(`Cannot fetch video. Reason: ${problem}`);
-  },
+  }
 );
 
 /**
@@ -104,7 +104,9 @@ export const getComments = createAsyncThunk<GetCommentsOutput, GetCommentsArgs, 
     }
 
     const { ok, problem, data } = await commentResource.getAll(videoId, {
-      page, size, parentId,
+      page,
+      size,
+      parentId,
     });
 
     if (ok) {
@@ -113,7 +115,7 @@ export const getComments = createAsyncThunk<GetCommentsOutput, GetCommentsArgs, 
       const resultComments: CommentStateData[] = paginatedData.dataset.map((c) => {
         return {
           ...c,
-          isOwned: (userId > 0) && (userId === c.userId),
+          isOwned: userId > 0 && userId === c.userId,
           children: { total: c.childCount, currentPage: 0, size: DEFAULT_COMMENT_REPLY_FETCH_SIZE, dataset: [] },
         };
       });
@@ -122,13 +124,13 @@ export const getComments = createAsyncThunk<GetCommentsOutput, GetCommentsArgs, 
     }
 
     throw new Error(`Cannot get comments. Reason: ${problem}`);
-  },
+  }
 );
 
 type AddCommentArgs = {
-  content: string,
-  level: number, // TODO: level can be inferred from its parent, so consider to omit this
-  parentId?: number,
+  content: string;
+  level: number; // TODO: level can be inferred from its parent, so consider to omit this
+  parentId?: number;
 };
 
 export const addComment = createAsyncThunk<CommentStateData, AddCommentArgs, BaseAsyncThunkConfig>(
@@ -150,14 +152,20 @@ export const addComment = createAsyncThunk<CommentStateData, AddCommentArgs, Bas
     if (ok) {
       const user = getState().user.data;
 
-      return { ...data.data, name: user.name, avatar: user.avatar, isOwned: true };
+      return {
+        ...data.data,
+        name: user.name,
+        avatar: user.avatar,
+        isOwned: true,
+        children: { total: 0, currentPage: 0, size: DEFAULT_COMMENT_REPLY_FETCH_SIZE, dataset: [] },
+      };
     }
 
     throw new Error(`Cannot add comment. Reason: ${problem}`);
-  },
+  }
 );
 
-type DeleteCommentArgsOutput = { id: number, level: number, parentId: number };
+type DeleteCommentArgsOutput = { id: number; level: number; parentId: number };
 export const deleteComment = createAsyncThunk<DeleteCommentArgsOutput, DeleteCommentArgsOutput, BaseAsyncThunkConfig>(
   'video/deleteComment',
   async (args, { getState }) => {
@@ -174,7 +182,7 @@ export const deleteComment = createAsyncThunk<DeleteCommentArgsOutput, DeleteCom
     }
 
     throw new Error(`Cannot add comment. Reason: ${problem}`);
-  },
+  }
 );
 
 export const handleReaction = createAsyncThunk<void, VideoReactionEnum, BaseAsyncThunkConfig>(
@@ -182,9 +190,14 @@ export const handleReaction = createAsyncThunk<void, VideoReactionEnum, BaseAsyn
   async (reaction, thunkAPI) => {
     const { dispatch, getState } = thunkAPI;
     const video = getState().video.data;
-    const updateType = reaction === VideoReactionEnum.LIKE
-      ? (video.liked ? VideoUpdateType.CANCEL_LIKE : VideoUpdateType.LIKE)
-      : (video.disliked ? VideoUpdateType.CANCEL_DISLIKE : VideoUpdateType.DISLIKE);
+    const updateType =
+      reaction === VideoReactionEnum.LIKE
+        ? video.liked
+          ? VideoUpdateType.CANCEL_LIKE
+          : VideoUpdateType.LIKE
+        : video.disliked
+          ? VideoUpdateType.CANCEL_DISLIKE
+          : VideoUpdateType.DISLIKE;
 
     const { ok, problem } = await videoResource.update(video.code, { updateType });
 
@@ -203,7 +216,7 @@ export const handleReaction = createAsyncThunk<void, VideoReactionEnum, BaseAsyn
 
       if (video.liked) dispatch(videoSlice.actions.switchLikeState());
     }
-  },
+  }
 );
 
 const initialCommentState: CommentState = {
@@ -301,7 +314,7 @@ const videoSlice = createSlice({
     });
     builder.addCase(getComments.rejected, (state, action) => {
       state.comment.status = CommentStateStatus.FETCHING_COMMENTS_FAILED;
-      state.problemMessage = 'Cannot fetch video\'s comments';
+      state.problemMessage = "Cannot fetch video's comments";
     });
 
     builder.addCase(addComment.pending, (state) => {
@@ -359,7 +372,7 @@ const videoSlice = createSlice({
           parentComment.children.dataset.splice(deletedIndex, 1);
         }
       } else {
-        const deletedIndex = state.comment.dataset.findIndex(v => v.id === id);
+        const deletedIndex = state.comment.dataset.findIndex((v) => v.id === id);
 
         state.data.commentCount -= 1;
         state.comment.total -= 1;
@@ -375,11 +388,7 @@ const videoSlice = createSlice({
   },
 });
 
-export const {
-  clearVideoState,
-  clearComments,
-  clearCommentStatus,
-} = videoSlice.actions;
+export const { clearVideoState, clearComments, clearCommentStatus } = videoSlice.actions;
 
 export const videoSliceActions = {
   ...videoSlice.actions,

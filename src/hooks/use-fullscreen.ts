@@ -1,10 +1,11 @@
-import { RefObject, useState, useLayoutEffect, useCallback } from "react";
+import { RefObject, useCallback, useLayoutEffect, useState } from 'react';
 
-const useFullscreen = (elRef: RefObject<HTMLElement>) => {
+const useFullscreen = (elRef: RefObject<HTMLElement>): [boolean, () => void] => {
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
   const setFullscreen = useCallback(async () => {
-    const isCompressed = document["fullscreenElement"] === null;
+    const isCompressed = document['fullscreenElement'] === null;
+
     if (isCompressed) {
       setIsFullscreen(true);
       return await elRef.current?.requestFullscreen();
@@ -15,14 +16,14 @@ const useFullscreen = (elRef: RefObject<HTMLElement>) => {
 
   useLayoutEffect(() => {
     document.onfullscreenchange = () => {
-      const isExpanded = document["fullscreenElement"] === null;
+      const isExpanded = document['fullscreenElement'] === null;
       if (isExpanded) {
         setIsFullscreen(false);
       }
     };
 
     return () => {
-      document["onfullscreenchange"] = null;
+      document['onfullscreenchange'] = null;
     };
   }, []);
 

@@ -8,7 +8,7 @@ import useInput from '@hooks/useInput';
 import { StyledComponentProps } from '@styles/StyledComponentProps.ts';
 import type { RootDispatch, RootState } from '@redux-store.ts';
 import { ChannelState, ChannelStateStatus } from '@models/channel.ts';
-import { updateChannel, uploadChannelAvatar } from '@reducers';
+import { channelActions, updateChannel, uploadChannelAvatar } from '@reducers';
 import LabelNestingInput from '@components/input/LabelNestingInput.tsx';
 import LabelNestingTextArea from '@components/input/LabelNestingTextArea';
 import { isNotBlank } from '@utilities';
@@ -25,78 +25,80 @@ const openModal = keyframes`
 `;
 
 const Wrapper = styled.div<StyledComponentProps>`
-    position: fixed;
-    left: 0;
-    top: 0;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 900;
+  background: rgba(0, 0, 0, 0.7);
+  animation: ${openModal} 0.3s ease-in-out;
+
+  .edit-profile {
+    width: 600px;
+    border-radius: 4px;
+    background: ${(props) => props.theme.grey};
+    margin: 12rem auto;
+    box-shadow:
+      0px 0px 0px rgba(0, 0, 0, 0.4),
+      0px 0px 4px rgba(0, 0, 0, 0.25);
+  }
+
+  .edit-profile img {
+    object-fit: cover;
+  }
+
+  div.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    border-bottom: 1px solid ${(props) => props.theme.darkGrey};
+  }
+
+  h3 {
+    display: flex;
+    align-items: center;
+  }
+
+  form {
+    padding: 1rem;
+  }
+
+  input,
+  textarea {
     width: 100%;
-    height: 100%;
-    z-index: 900;
-    background: rgba(0, 0, 0, 0.7);
-    animation: ${openModal} 0.3s ease-in-out;
+    background: ${(props) => props.theme.black};
+    border: 1px solid ${(props) => props.theme.black};
+    margin-bottom: 1rem;
+    padding: 0.6rem 1rem;
+    border-radius: 3px;
+    color: ${(props) => props.theme.primaryColor};
+  }
 
+  textarea {
+    height: 75px;
+  }
+
+  svg {
+    fill: ${(props) => props.theme.red};
+    height: 22px;
+    width: 22px;
+    margin-right: 1rem;
+    position: relative;
+    top: -1px;
+  }
+
+  @media screen and (max-width: 600px) {
     .edit-profile {
-        width: 600px;
-        border-radius: 4px;
-        background: ${(props) => props.theme.grey};
-        margin: 12rem auto;
-        box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.4), 0px 0px 4px rgba(0, 0, 0, 0.25);
+      width: 90%;
+      margin: 4rem auto;
     }
+  }
 
-    .edit-profile img {
-        object-fit: cover;
-    }
-
-    div.modal-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 1rem;
-        border-bottom: 1px solid ${(props) => props.theme.darkGrey};
-    }
-
-    h3 {
-        display: flex;
-        align-items: center;
-    }
-
-    form {
-        padding: 1rem;
-    }
-
-    input,
-    textarea {
-        width: 100%;
-        background: ${(props) => props.theme.black};
-        border: 1px solid ${(props) => props.theme.black};
-        margin-bottom: 1rem;
-        padding: 0.6rem 1rem;
-        border-radius: 3px;
-        color: ${(props) => props.theme.primaryColor};
-    }
-
-    textarea {
-        height: 75px;
-    }
-
-    svg {
-        fill: ${(props) => props.theme.red};
-        height: 22px;
-        width: 22px;
-        margin-right: 1rem;
-        position: relative;
-        top: -1px;
-    }
-
-    @media screen and (max-width: 600px) {
-        .edit-profile {
-            width: 90%;
-            margin: 4rem auto;
-        }
-    }
-
-    @media screen and (max-width: 400px) {
-        background: rgba(0, 0, 0, 0.9);
-    }
+  @media screen and (max-width: 400px) {
+    background: rgba(0, 0, 0, 0.9);
+  }
 `;
 
 type Props = {
@@ -125,24 +127,29 @@ const UpdateChannelModal: React.FC<Props> = ({ closeModal }) => {
       }
     };*/
 
-  const handleAvatarUpload = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files[0];
+  const handleAvatarUpload = useCallback(
+    async (e: ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files[0];
 
-    if (file) {
-      dispatch(uploadChannelAvatar(file));
-    }
-  }, [dispatch]);
+      if (file) {
+        dispatch(uploadChannelAvatar(file));
+      }
+    },
+    [dispatch]
+  );
 
   const handleEditProfile = useCallback(() => {
     if (!name.value.trim()) {
       return toast.error('name should not be empty');
     }
 
-    dispatch(updateChannel({
-      name: name.value,
-      pathname: pathname.value,
-      description: description.value,
-    }));
+    dispatch(
+      updateChannel({
+        name: name.value,
+        pathname: pathname.value,
+        description: description.value,
+      })
+    );
   }, [description.value, name.value, pathname.value, dispatch]);
 
   useEffect(() => {
@@ -154,26 +161,31 @@ const UpdateChannelModal: React.FC<Props> = ({ closeModal }) => {
         loadingToast.hide();
         toast.success('Updated');
         closeModal();
+        dispatch(channelActions.clearStatus());
         break;
       case ChannelStateStatus.UPDATE_FAILED:
         loadingToast.hide();
         toast.error('Update failed');
+        dispatch(channelActions.clearStatus());
         break;
 
       case ChannelStateStatus.IS_UPLOADING:
         loadingToast.show('Updating');
+        dispatch(channelActions.clearStatus());
         break;
       case ChannelStateStatus.UPLOAD_SUCCEEDED:
         loadingToast.hide();
         toast.success('Updated');
         closeModal();
+        dispatch(channelActions.clearStatus());
         break;
       case ChannelStateStatus.UPLOAD_FAILED:
         loadingToast.hide();
         toast.error('Update failed');
+        dispatch(channelActions.clearStatus());
         break;
     }
-  }, [closeModal, loadingToast, status]);
+  }, [closeModal, dispatch, status]);
 
   return (
     <Wrapper>
@@ -212,11 +224,7 @@ const UpdateChannelModal: React.FC<Props> = ({ closeModal }) => {
           <div className="flex mb-2 items-center space-x-2">
             <div className="avatar-upload-icon w-1/6 h-20">
               <label htmlFor="avatar-upload" className="block w-full h-full avatar-upload cursor-pointer">
-                <img
-                  src={channel.avatar || defaultAvatar}
-                  className="w-full aspect-square rounded-full"
-                  alt="avatar"
-                />
+                <img src={channel.avatar || defaultAvatar} className="w-full aspect-square rounded-full" alt="avatar" />
                 {/*{(channel.avatar) ? (*/}
                 {/*  <img*/}
                 {/*    src={channel.avatar}*/}
@@ -225,13 +233,7 @@ const UpdateChannelModal: React.FC<Props> = ({ closeModal }) => {
                 {/*  />*/}
                 {/*) : <div>Upload avatar</div>}*/}
               </label>
-              <input
-                id="avatar-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                className="hidden"
-              />
+              <input id="avatar-upload" type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
             </div>
             <LabelNestingInput
               label={'Channel name (required)'}

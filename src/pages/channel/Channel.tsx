@@ -9,7 +9,7 @@ import ChannelTabAbout from '@pages/channel/ChannelTabAbout.tsx';
 import NoResults from '@components/NoResults';
 import Button from '@styles/Button';
 import Skeleton from '@skeletons/ChannelSkeleton';
-import { changeSubscriptionState, clearChannel, getChannel } from '@reducers/channel';
+import { changeSubscriptionState, channelActions, getChannel } from '@reducers/channel';
 import type { RootDispatch, RootState } from '@redux-store.ts';
 import type { StyledComponentProps } from '@styles/StyledComponentProps.ts';
 import { ChannelState, ChannelStateStatus } from '@models/channel.ts';
@@ -25,82 +25,82 @@ const activeTabStyle = {
 type Wrapper = StyledComponentProps & { editChannel: boolean };
 
 const Wrapper = styled.div<Wrapper>`
-    background: ${(props) => props.theme.black};
-    min-height: 100vh;
-    padding-bottom: 7rem;
+  background: ${(props) => props.theme.black};
+  min-height: 100vh;
+  padding-bottom: 7rem;
 
-    .cover {
-        height: 170px;
-    }
+  .cover {
+    height: 170px;
+  }
 
-    .cover img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
+  .cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 
-    .header-tabs {
-        padding: 1.2rem 1rem;
-        background: ${(props) => props.theme.bg};
-    }
+  .header-tabs {
+    padding: 1.2rem 1rem;
+    background: ${(props) => props.theme.bg};
+  }
 
-    .header {
-        width: 80%;
-        display: flex;
-        margin: 0 auto;
-        justify-content: space-between;
-        align-items: center;
-    }
+  .header {
+    width: 80%;
+    display: flex;
+    margin: 0 auto;
+    justify-content: space-between;
+    align-items: center;
+  }
 
+  .tabs,
+  .tab {
+    margin: 0 auto;
+    margin-top: 1.5rem;
+    width: 80%;
+  }
+
+  ul {
+    list-style: none;
+    display: flex;
+    align-items: center;
+  }
+
+  li {
+    margin-right: 2rem;
+    text-transform: uppercase;
+    letter-spacing: 1.1px;
+  }
+
+  li:hover {
+    cursor: pointer;
+  }
+
+  @media screen and (max-width: 860px) {
+    .header,
     .tabs,
     .tab {
-        margin: 0 auto;
-        margin-top: 1.5rem;
-        width: 80%;
+      width: 90%;
     }
+  }
 
-    ul {
-        list-style: none;
-        display: flex;
-        align-items: center;
+  @media screen and (max-width: 470px) {
+    .header,
+    .tabs {
+      width: 100%;
     }
+  }
 
-    li {
-        margin-right: 2rem;
-        text-transform: uppercase;
-        letter-spacing: 1.1px;
-    }
-
-    li:hover {
-        cursor: pointer;
-    }
-
-    @media screen and (max-width: 860px) {
-        .header,
-        .tabs,
-        .tab {
-            width: 90%;
+  ${(props) =>
+    props.editChannel &&
+    css`
+      @media screen and (max-width: 440px) {
+        .header {
+          flex-direction: column;
+          justify-content: flex-start;
+          align-items: flex-start;
         }
-    }
-
-    @media screen and (max-width: 470px) {
-        .header,
-        .tabs {
-            width: 100%;
-        }
-    }
-
-    ${(props) =>
-            props.editChannel &&
-            css`
-                @media screen and (max-width: 440px) {
-                    .header {
-                        flex-direction: column;
-                        justify-content: flex-start;
-                        align-items: flex-start;
-                    }
-                }
-            `}
+      }
+    `}
 `;
 
 enum ChannelTab {
@@ -128,17 +128,13 @@ const Channel = () => {
     dispatch(getChannel(pathname));
 
     return () => {
-      dispatch(clearChannel());
+      dispatch(channelActions.clearChannel());
     };
   }, [dispatch, pathname]);
 
-
   if (status == ChannelStateStatus.FETCHING_FAILED && !channel?.id) {
     return (
-      <NoResults
-        title="Page not found"
-        text="The page you are looking for is not found or it may have been removed"
-      />
+      <NoResults title="Page not found" text="The page you are looking for is not found or it may have been removed" />
     );
   }
 
@@ -148,41 +144,33 @@ const Channel = () => {
 
   return (
     <Wrapper editChannel={channel.isOwned}>
-      <div className="cover">
-        {channel.cover && <img src={channel.cover} alt="channel-cover" />}
-      </div>
+      <div className="cover">{channel.cover && <img src={channel.cover} alt="channel-cover" />}</div>
 
       <div className="header-tabs">
         <div className="header">
           <div className="flex-row">
-            <img
-              className="avatar lg"
-              src={channel.avatar || defaultAvatar}
-              alt="channel avatar"
-            />
+            <img className="avatar lg" src={channel.avatar || defaultAvatar} alt="channel avatar" />
             <div>
               <h3>{channel.name}</h3>
-              <span className="secondary">
-                {channel.subscriptionCount} subscribers
-              </span>
+              <span className="secondary">{channel.subscriptionCount} subscribers</span>
             </div>
           </div>
 
           {channel.isOwned && <EditChannelButton />}
 
-          {!channel.isOwned && (channel.subscribed ? (
-            <Button grey onClick={() => handleSubscribeButton()}>Subscribed</Button>
-          ) : (
-            <Button onClick={() => handleSubscribeButton()}>Subscribe</Button>
-          ))}
+          {!channel.isOwned &&
+            (channel.subscribed ? (
+              <Button grey onClick={() => handleSubscribeButton()}>
+                Subscribed
+              </Button>
+            ) : (
+              <Button onClick={() => handleSubscribeButton()}>Subscribe</Button>
+            ))}
         </div>
 
         <div className="tabs">
           <ul className="secondary">
-            <li
-              style={tab === ChannelTab.VIDEOS ? activeTabStyle : {}}
-              onClick={() => setTab(ChannelTab.VIDEOS)}
-            >
+            <li style={tab === ChannelTab.VIDEOS ? activeTabStyle : {}} onClick={() => setTab(ChannelTab.VIDEOS)}>
               Videos
             </li>
             {/*<li*/}
@@ -191,10 +179,7 @@ const Channel = () => {
             {/*>*/}
             {/*  Channels*/}
             {/*</li>*/}
-            <li
-              style={tab === ChannelTab.ABOUT ? activeTabStyle : {}}
-              onClick={() => setTab(ChannelTab.ABOUT)}
-            >
+            <li style={tab === ChannelTab.ABOUT ? activeTabStyle : {}} onClick={() => setTab(ChannelTab.ABOUT)}>
               About
             </li>
           </ul>

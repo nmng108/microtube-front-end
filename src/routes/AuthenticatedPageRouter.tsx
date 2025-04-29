@@ -6,7 +6,7 @@ import Channel from '@pages/channel/Channel';
 import WatchVideo from '@pages/watch/WatchVideo.tsx';
 import SearchResults from '@pages/SearchResults';
 import Library from '@pages/Library';
-import WatchHistory from '@pages/WatchHistory.tsx';
+import WatchHistory from '@pages/watchhistory/WatchHistory.tsx';
 import LikedVideos from '@pages/LikedVideos';
 import HomePageContainer from '@pages/homepage/HomePageContainer';
 import { ROUTES } from '@constants';

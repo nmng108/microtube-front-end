@@ -16,87 +16,87 @@ import { Button } from '@mui/material';
 import { logout } from '@reducers';
 
 const Wrapper = styled.div<StyledComponentProps>`
-    position: fixed;
-    top: 0;
-    left: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  height: 4rem;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  background: ${(props) => props.theme.grey};
+  z-index: 99;
+  padding: 0.7rem 1.5rem;
+
+  input {
+    width: 500px;
+  }
+
+  .toggle-navhandler {
+    display: none;
+  }
+
+  .logo span {
+    position: relative;
+    top: 1px;
+  }
+
+  ul {
+    list-style: none;
     display: flex;
-    height: 4rem;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    background: ${(props) => props.theme.grey};
-    z-index: 99;
-    padding: 0.7rem 1.5rem;
+    position: relative;
+    top: 2px;
+  }
 
-    input {
-        width: 500px;
-    }
+  li svg {
+    margin-right: 1.7rem;
+    position: relative;
+    top: 3px;
+  }
 
+  img {
+    position: relative;
+  }
+
+  .dropdown-list {
+    background: ${(props) => props.theme.darkGrey};
+  }
+
+  .dropdown-item {
+    background: ${(props) => props.theme.red};
+  }
+
+  @media screen and (max-width: 1093px) {
     .toggle-navhandler {
-        display: none;
+      display: block;
     }
+  }
 
-    .logo span {
-        position: relative;
-        top: 1px;
+  @media screen and (max-width: 1000px) {
+    input {
+      width: 400px;
     }
+  }
 
-    ul {
-        list-style: none;
-        display: flex;
-        position: relative;
-        top: 2px;
+  @media screen and (max-width: 850px) {
+    input {
+      width: 280px;
+    }
+  }
+
+  @media screen and (max-width: 500px) {
+    .toggle-navhandler {
+      display: none;
     }
 
     li svg {
-        margin-right: 1.7rem;
-        position: relative;
-        top: 3px;
+      width: 30px;
+      height: 30px;
+      margin-right: 1.7rem;
+      position: relative;
+      top: 0px;
     }
-
-    img {
-        position: relative;
-    }
-
-    .dropdown-list {
-        background: ${(props) => props.theme.darkGrey};
-    }
-
-    .dropdown-item {
-        background: ${(props) => props.theme.red};
-    }
-
-    @media screen and (max-width: 1093px) {
-        .toggle-navhandler {
-            display: block;
-        }
-    }
-
-    @media screen and (max-width: 1000px) {
-        input {
-            width: 400px;
-        }
-    }
-
-    @media screen and (max-width: 850px) {
-        input {
-            width: 280px;
-        }
-    }
-
-    @media screen and (max-width: 500px) {
-        .toggle-navhandler {
-            display: none;
-        }
-
-        li svg {
-            width: 30px;
-            height: 30px;
-            margin-right: 1.7rem;
-            position: relative;
-            top: 0px;
-        }
-    }
+  }
 `;
 
 const Header = () => {
@@ -141,10 +141,7 @@ const Header = () => {
   return (
     <Wrapper>
       <div className="logo flex items-center justify-between">
-        <HamburgerIcon
-          className="toggle-navhandler"
-          onClick={handleToggleSidebar}
-        />
+        <HamburgerIcon className="toggle-navhandler" onClick={handleToggleSidebar} />
         <Link to="/" className="flex h-full items-center space-x-2 text-white text-lg font-bold">
           <img src="/icon.svg" alt="Logo" className="h-14" />
           <span className="hidden lg:inline">Microtube</span>
@@ -153,9 +150,9 @@ const Header = () => {
 
       <SearchBar />
 
-      {(user?.id >= 0) ? (
+      {user?.id >= 0 ? (
         <ul className="flex h-full items-end space-x-2 text-white border-0 hover:text-gray-300 focus:outline-none">
-          {(user.ownedChannel?.id > 0) && (
+          {user.ownedChannel?.id > 0 && (
             <li>
               <VideoUploadButton />
             </li>
@@ -164,10 +161,7 @@ const Header = () => {
             <NotificationIcon />
           </li>
           <li ref={dropdownToggleRef}>
-            <Button
-              variant="text"
-              onClick={toggleDropdown}
-            >
+            <Button variant="text" onClick={toggleDropdown}>
               {/*<img src={defaultAvatar} alt="Avatar" className="w-8 h-8 rounded-full" />*/}
               <Avatar className="w-8 h-8" src={user.avatar || defaultAvatar} alt="User's avatar" />
             </Button>
@@ -176,7 +170,8 @@ const Header = () => {
               <div onClick={toggleDropdown} className="h-full relative">
                 <div
                   ref={dropdownRef}
-                  className="dropdown-list absolute right-0 top-0 w-40 rounded-lg py-2 mt-2 shadow-lg text-gray-700 z-20">
+                  className="dropdown-list absolute right-0 top-0 w-40 rounded-lg py-2 mt-2 shadow-lg text-gray-700 z-20"
+                >
                   <nav /* className="hidden md:flex space-x-6 text-teal-300"*/>
                     {/*<nav className="hidden md:flex space-x-6">*/}
                     {[
@@ -208,7 +203,11 @@ const Header = () => {
           </li>
         </ul>
       ) : (
-        <Link to={ROUTES.AUTH_LOGIN}>Login</Link>
+        <Link
+          to={`${ROUTES.AUTH_LOGIN}${location.pathname.length > 1 ? `?continue=${encodeURIComponent(location.pathname + location.search)}` : ''}`}
+        >
+          Login
+        </Link>
       )}
     </Wrapper>
   );

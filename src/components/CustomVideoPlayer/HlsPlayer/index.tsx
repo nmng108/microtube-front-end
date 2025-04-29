@@ -1,24 +1,23 @@
-import { useEffect, useState } from 'react';
-import Hls from 'hls.js';
+import React, { useEffect, useState } from 'react';
+import Hls, { Events, ErrorTypes } from 'hls.js';
 import styled from 'styled-components';
 import { Loader } from '@components/ui';
 import useVideoPlayerStore from '@store/video-player-store';
-import React from 'react';
 
 declare const window: Window &
   typeof globalThis & {
-  Hls: typeof Hls;
-};
+    Hls: typeof Hls;
+  };
 
 const StyledVideo = styled.video`
-    width: ${({ width }) => width || '100%'};
-    height: ${({ width }) => width || 'auto'};
-    cursor: pointer;
-    object-fit: fill;
+  width: ${({ width }) => width || '100%'};
+  height: ${({ width }) => width || 'auto'};
+  cursor: pointer;
+  object-fit: fill;
 
-    &:hover ~ div {
-        display: flex;
-    }
+  &:hover ~ div {
+    display: flex;
+  }
 `;
 
 const HlsPlayer = () => {
@@ -57,7 +56,7 @@ const HlsPlayer = () => {
     updateDuration(+duration);
   };
 
-  const defaultConfig= {
+  const defaultConfig = {
     poster: showPoster ? posterSrc : '',
     onClick: pauseToggler,
     onLoadStart: () => {
@@ -91,24 +90,24 @@ const HlsPlayer = () => {
       }
 
       // Event Docs: https://github.com/video-dev/hls.js/blob/v1.4.7/docs/API.md#runtime-events
-      newHls.on(Hls.Events.MEDIA_ATTACHED, () => {
+      newHls.on(Events.MEDIA_ATTACHED, () => {
         newHls.loadSource(sources?.[0]);
 
-        newHls.on(Hls.Events.MANIFEST_PARSED, () => {
+        newHls.on(Events.MANIFEST_PARSED, () => {
           setHlsInstance(newHls);
         });
-        newHls.on(Hls.Events.FRAG_PARSING_METADATA, (_event, data) => {
+        newHls.on(Events.FRAG_PARSING_METADATA, (_event, data) => {
           console.log('Data', { _event, data });
         });
       });
 
-      newHls.on(Hls.Events.ERROR, (_event, data) => {
+      newHls.on(Events.ERROR, (_event, data) => {
         if (data.fatal) {
           switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
+            case ErrorTypes.NETWORK_ERROR:
               newHls.startLoad();
               break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
+            case ErrorTypes.MEDIA_ERROR:
               newHls.recoverMediaError();
               break;
             default:

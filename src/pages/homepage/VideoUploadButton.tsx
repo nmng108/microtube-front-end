@@ -6,11 +6,11 @@ import UploadVideoModal from '@components/UploadVideoModal';
 const uploadSizeLimit: number = 1000; // MB
 
 const VideoUploadButton = () => {
-  const [showModal, setShowModal] = useState(false);
-  const [previewSource, setPreviewSource] = useState<{ src: string, type: string }>(null);
+  const [showsModal, setShowsModal] = useState(false);
+  const [previewSource, setPreviewSource] = useState<{ src: string; type: string }>(null);
   const [videoFile, setVideoFile] = useState<File>();
 
-  const closeModal = useCallback(() => setShowModal(false), []);
+  const closeModal = useCallback(() => setShowsModal(false), []);
   const handleVideoUpload = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files[0];
 
@@ -25,7 +25,7 @@ const VideoUploadButton = () => {
 
       setVideoFile(file);
       setPreviewSource({ src: url, type: file.type });
-      setShowModal(true);
+      setShowsModal(true);
 
       // const data = await upload("video", file);
       //
@@ -38,32 +38,18 @@ const VideoUploadButton = () => {
   }, []);
 
   useEffect(() => {
-    return () => {
-      if (videoFile) {
-        setVideoFile(null);
-      }
+    if (!showsModal && videoFile) {
+      setVideoFile(null);
     }
-  }, [videoFile]);
+  }, [showsModal, videoFile]);
 
   return (
     <div>
       <label htmlFor="video-upload">
         <UploadIcon />
       </label>
-      <input
-        style={{ display: "none" }}
-        id="video-upload"
-        type="file"
-        accept="video/*"
-        onChange={handleVideoUpload}
-      />
-      {showModal && (
-        <UploadVideoModal
-          videoFile={videoFile}
-          source={previewSource}
-          closeModal={closeModal}
-        />
-      )}
+      <input style={{ display: 'none' }} id="video-upload" type="file" accept="video/*" onChange={handleVideoUpload} />
+      {showsModal && <UploadVideoModal videoFile={videoFile} source={previewSource} closeModal={closeModal} />}
     </div>
   );
 };

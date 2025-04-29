@@ -1,6 +1,6 @@
-import React from "react";
-import LikedVideos from "./LikedVideos";
-import WatchHistory from "./WatchHistory.tsx";
+import React from 'react';
+import LikedVideos from './LikedVideos';
+import WatchHistory from './watchhistory/WatchHistory.tsx';
 
 const Library = () => (
   <>

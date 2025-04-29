@@ -11,7 +11,7 @@ import { BaseAsyncThunkConfig } from '@redux-store.ts';
 type GetHistoryOutput = {
   dataset: WatchHistoryRecord[];
   page: number;
-}
+};
 
 export const getHistory = createAsyncThunk<GetHistoryOutput, void, BaseAsyncThunkConfig>(
   'history/getHistory',
@@ -26,20 +26,20 @@ export const getHistory = createAsyncThunk<GetHistoryOutput, void, BaseAsyncThun
     }
 
     throw problem;
-  },
+  }
 );
 
 export const deleteHistoryRecord = createAsyncThunk<number[], number[], BaseAsyncThunkConfig>(
   'history/delete',
-  async (ids, thunkAPI) => {
-    const { ok, problem, data } = await watchHistoryResource.delete(ids);
+  async (ids) => {
+    const { ok, problem } = await watchHistoryResource.delete(ids);
 
     if (ok) {
       return ids;
     }
 
     throw problem;
-  },
+  }
 );
 
 const initialState: WatchHistoryState = {

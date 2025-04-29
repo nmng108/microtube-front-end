@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { Link } from 'react-router';
 import { toast } from 'react-toastify';
 import useInput from '@hooks/useInput';
-import { addComment, clearCommentStatus, deleteComment, getComments } from '@reducers';
+import { addComment, deleteComment, getComments } from '@reducers';
 import { timeSince } from '@utils';
 import { StyledComponentProps } from '@styles/StyledComponentProps';
 import { RootDispatch, RootState } from '@redux-store.ts';
@@ -19,115 +19,116 @@ import { VideoState } from '@models/video.ts';
 type Wrapper = StyledComponentProps & { commentLevel: number };
 
 const Wrapper = styled.div<Wrapper>`
-    margin: 1rem 0;
+  margin: 1rem 0;
 
-    h3 {
-        margin-bottom: 0.8rem;
-    }
+  h3 {
+    margin-bottom: 0.8rem;
+  }
 
-    .add-comment {
-        display: flex;
-        align-items: flex-start; /* Align items to the top for textarea */
-        margin-bottom: 2.3rem;
-    }
+  .add-comment {
+    display: flex;
+    align-items: flex-start; /* Align items to the top for textarea */
+    margin-bottom: 2.3rem;
+  }
 
-    .add-comment textarea {
-        background: inherit;
-        border: none;
-        border-bottom: 1px solid ${(props) => props.theme.darkGrey};
+  .add-comment textarea {
+    background: inherit;
+    border: none;
+    border-bottom: 1px solid ${(props) => props.theme.darkGrey};
+    color: ${(props) => props.theme.primaryColor};
+    width: 100%;
+    height: auto; /* Adjust height automatically */
+    min-height: 40px; /* Minimum height to match avatar */
+    padding: 0.5rem 0;
+    font-size: 1rem;
+    resize: vertical; /* Allow vertical resizing */
+  }
+
+  .add-comment img {
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    object-fit: cover;
+    margin-right: 1rem;
+  }
+
+  .comment-item {
+    margin-bottom: 1rem;
+    padding-left: ${(props) =>
+      props.commentLevel && props.commentLevel > 1 ? `${(props.commentLevel - 1) * 2}rem` : '0'};
+  }
+
+  .comment {
+    display: flex;
+    font-size: 0.9rem;
+    align-items: flex-start; /* Align items to the top */
+  }
+
+  .comment img {
+    width: 40px;
+    object-fit: cover;
+    height: 40px;
+    border-radius: 20px;
+    margin-right: 1rem;
+  }
+
+  .comment-info {
+    flex-grow: 1;
+  }
+
+  .comment-actions {
+    display: flex;
+    align-items: center;
+    margin-top: 0.3rem;
+    font-size: 0.8rem;
+    color: ${(props) => props.theme.secondaryColor};
+
+    button {
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      margin-right: 0.8rem;
+      padding: 0;
+      display: flex;
+      align-items: center;
+
+      svg {
+        margin-right: 0.3rem;
+      }
+
+      &:hover {
         color: ${(props) => props.theme.primaryColor};
-        width: 100%;
-        height: auto; /* Adjust height automatically */
-        min-height: 40px; /* Minimum height to match avatar */
-        padding: 0.5rem 0;
-        font-size: 1rem;
-        resize: vertical; /* Allow vertical resizing */
+      }
     }
+  }
 
-    .add-comment img {
-        width: 40px;
-        height: 40px;
-        border-radius: 20px;
-        object-fit: cover;
-        margin-right: 1rem;
-    }
+  .reply-form {
+    display: flex;
+    align-items: flex-start;
+    margin-top: 1rem;
+  }
 
-    .comment-item {
-        margin-bottom: 1rem;
-        padding-left: ${(props) => props.commentLevel && props.commentLevel > 1 ? `${(props.commentLevel - 1) * 2}rem` : '0'};
-    }
+  .reply-form textarea {
+    background: inherit;
+    border: none;
+    border-bottom: 1px solid ${(props) => props.theme.darkGrey};
+    color: ${(props) => props.theme.primaryColor};
+    width: 100%;
+    height: auto;
+    min-height: 30px;
+    padding: 0.5rem 0;
+    font-size: 0.9rem;
+    resize: vertical;
+  }
 
-    .comment {
-        display: flex;
-        font-size: 0.9rem;
-        align-items: flex-start; /* Align items to the top */
-    }
-
-    .comment img {
-        width: 40px;
-        object-fit: cover;
-        height: 40px;
-        border-radius: 20px;
-        margin-right: 1rem;
-    }
-
-    .comment-info {
-        flex-grow: 1;
-    }
-
-    .comment-actions {
-        display: flex;
-        align-items: center;
-        margin-top: 0.3rem;
-        font-size: 0.8rem;
-        color: ${(props) => props.theme.secondaryColor};
-
-        button {
-            background: none;
-            border: none;
-            color: inherit;
-            cursor: pointer;
-            margin-right: 0.8rem;
-            padding: 0;
-            display: flex;
-            align-items: center;
-
-            svg {
-                margin-right: 0.3rem;
-            }
-
-            &:hover {
-                color: ${(props) => props.theme.primaryColor};
-            }
-        }
-    }
-
-    .reply-form {
-        display: flex;
-        align-items: flex-start;
-        margin-top: 1rem;
-    }
-
-    .reply-form textarea {
-        background: inherit;
-        border: none;
-        border-bottom: 1px solid ${(props) => props.theme.darkGrey};
-        color: ${(props) => props.theme.primaryColor};
-        width: 100%;
-        height: auto;
-        min-height: 30px;
-        padding: 0.5rem 0;
-        font-size: 0.9rem;
-        resize: vertical;
-    }
-
-    .reply-form img {
-        width: 30px;
-        height: 30px;
-        border-radius: 15px;
-        object-fit: cover;
-        margin-right: 1rem;
-    }
+  .reply-form img {
+    width: 30px;
+    height: 30px;
+    border-radius: 15px;
+    object-fit: cover;
+    margin-right: 1rem;
+  }
 `;
 
 interface CommentItemProps {
@@ -156,41 +157,48 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply }) => {
     }, 0);
   }, []);
 
-  const handleReplySubmit = useCallback(async (e: React.KeyboardEvent<HTMLTextAreaElement> & {
-    target: HTMLTextAreaElement
-  }) => {
-    e.target.style.height = 'auto';
-    e.target.style.height = `${e.target.scrollHeight + 10}px`;
-
-    if (e.shiftKey && e.code === 'Enter') {
-      e.preventDefault();
-
-      const textarea = e.target;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const value = textarea.value;
-      textarea.value = value.substring(0, start) + '\n' + value.substring(end);
-      textarea.selectionStart = textarea.selectionEnd = start + 1;
-      textarea.scrollTop = textarea.scrollHeight + 10;
-    } else if (e.code === 'Enter') {
-      e.preventDefault();
-
-      if (!replyInput.value.trim()) {
-        return toast.error('Please write a reply');
+  const handleReplySubmit = useCallback(
+    async (
+      e: React.KeyboardEvent<HTMLTextAreaElement> & {
+        target: HTMLTextAreaElement;
       }
+    ) => {
+      e.target.style.height = 'auto';
+      e.target.style.height = `${e.target.scrollHeight + 10}px`;
 
-      if (focusedReplyTextarea.current === e.currentTarget) {
-        focusedReplyTextarea.current.disabled = true;
+      if (e.shiftKey && e.code === 'Enter') {
+        e.preventDefault();
+
+        const textarea = e.target;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const value = textarea.value;
+        textarea.value = value.substring(0, start) + '\n' + value.substring(end);
+        textarea.selectionStart = textarea.selectionEnd = start + 1;
+        textarea.scrollTop = textarea.scrollHeight + 10;
+      } else if (e.code === 'Enter') {
+        e.preventDefault();
+
+        if (!replyInput.value.trim()) {
+          return toast.error('Please write a reply');
+        }
+
+        if (focusedReplyTextarea.current === e.currentTarget) {
+          focusedReplyTextarea.current.disabled = true;
+        }
+
+        dispatch(
+          addComment({
+            content: replyInput.value,
+            level: comment.level + 1,
+            parentId: comment.id,
+          })
+        );
+        setIsReplying(false);
       }
-
-      dispatch(addComment({
-        content: replyInput.value,
-        level: comment.level + 1,
-        parentId: comment.id,
-      }));
-      setIsReplying(false);
-    }
-  }, [comment.id, comment.level, dispatch, replyInput]);
+    },
+    [comment.id, comment.level, dispatch, replyInput]
+  );
 
   const handleDeleteClick = useCallback(() => {
     if (window.confirm('Are you sure you want to delete this comment?')) {
@@ -229,12 +237,14 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply }) => {
         </Link>
         <div className="comment-info">
           <p className="secondary">
-            <span><Link to={`/user/${comment.userId}`}>{comment.name}</Link></span>
+            <span>
+              <Link to={`/user/${comment.userId}`}>{comment.name}</Link>
+            </span>
             <span style={{ marginLeft: '0.6rem' }}>{timeSince(new Date(comment.createdAt).getTime())} ago</span>
           </p>
           <p className="whitespace-pre-line">{comment.content}</p>
           <div className="comment-actions">
-            <button type="button" onClick={handleReplyClick} style={{fontSize: 'inherit'}}>
+            <button type="button" onClick={handleReplyClick} style={{ fontSize: 'inherit' }}>
               <ReplyIcon style={{ fontSize: '1rem' }} /> <span>Reply</span>
             </button>
             {comment.isOwned && (
@@ -243,7 +253,9 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply }) => {
               </IconButton>
             )}
             {comment.childCount > 0 && (
-              <span>{comment.childCount} {comment.childCount > 1 ? 'replies' : 'reply'}</span>
+              <span>
+                {comment.childCount} {comment.childCount > 1 ? 'replies' : 'reply'}
+              </span>
             )}
           </div>
           {isReplying && (
@@ -259,29 +271,36 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply }) => {
               />
             </div>
           )}
-          {(comment.level < 3) && (
+          {comment.level < 3 && (
             <>
-              {((comment.children?.total > 0) && (!showsReplies || (comment.children.dataset.length == 0))) && (
-                <a onClick={(comment.children.dataset.length == 0) ? handleLoadMoreReplies : handleShowHideReplies}
-                   className="underline text-blue-600 cursor-pointer">
+              {comment.children?.total > 0 && (!showsReplies || comment.children.dataset.length == 0) && (
+                <a
+                  onClick={comment.children.dataset.length == 0 ? handleLoadMoreReplies : handleShowHideReplies}
+                  className="underline text-blue-600 cursor-pointer"
+                >
                   See replies
                 </a>
               )}
-              {showsReplies && (comment.children.dataset.length > 0) && (
+              {showsReplies && comment.children.dataset.length > 0 && (
                 <a onClick={handleShowHideReplies} className="underline text-blue-600 cursor-pointer">
                   Hide replies
                 </a>
               )}
               {showsReplies && (
                 <>
-                  {comment.children?.total > 0 && comment.children.dataset.map((childComment) => (
-                    <CommentItem key={childComment.id} comment={childComment} onReply={onReply} />
-                  ))}
-                  {/*comment.level < 2 /*Limit maximum level to 2 &&*/ (comment.children?.total > 0) && (comment.children.dataset.length > 0) && (comment.children.dataset.length < comment.children.total) && (
-                    <a onClick={handleLoadMoreReplies} className="underline text-blue-600 cursor-pointer">
-                      Load more replies...
-                    </a>
-                  )}
+                  {comment.children?.total > 0 &&
+                    comment.children.dataset.map((childComment) => (
+                      <CommentItem key={childComment.id} comment={childComment} onReply={onReply} />
+                    ))}
+                  {
+                    /*comment.level < 2 /*Limit maximum level to 2 &&*/ comment.children?.total > 0 &&
+                      comment.children.dataset.length > 0 &&
+                      comment.children.dataset.length < comment.children.total && (
+                        <a onClick={handleLoadMoreReplies} className="underline text-blue-600 cursor-pointer">
+                          Load more replies...
+                        </a>
+                      )
+                  }
                 </>
               )}
             </>

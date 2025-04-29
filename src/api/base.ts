@@ -1,7 +1,6 @@
-import { AxiosRequestConfig, HttpStatusCode } from 'axios';
+import { type AxiosRequestConfig, HttpStatusCode } from 'axios';
 import type { ApiResponse, ApisauceInstance } from 'apisauce';
 import { createPathBuilder } from '@utilities';
-import { redirect } from 'react-router';
 import { ROUTES } from '@constants';
 
 export abstract class AbstractHttpResource {
@@ -23,24 +22,59 @@ export abstract class AbstractHttpResource {
     return this._basePath;
   }
 
-  doGet<P, S, E = S>(path?: string | number, params?: P, axiosConfig?: AxiosRequestConfig, redirectsOn401: boolean = true): Promise<ApiResponse<S, E>> {
-    return this._apisauceInstance.get<S, E>(this.pathBuilder(path), params, axiosConfig).then((res) => redirectsOn401 ? redirectOn401(res) : res);
+  doGet<P, S, E = S>(
+    path?: string | number,
+    params?: P,
+    axiosConfig?: AxiosRequestConfig,
+    redirectsOn401: boolean = true
+  ): Promise<ApiResponse<S, E>> {
+    return this._apisauceInstance
+      .get<S, E>(this.pathBuilder(path), params, axiosConfig)
+      .then((res) => (redirectsOn401 ? redirectOn401(res) : res));
   }
 
-  doDelete<P, S, E = S>(path?: string | number, params?: P, axiosConfig?: AxiosRequestConfig, redirectsOn401: boolean = true): Promise<ApiResponse<S, E>> {
-    return this._apisauceInstance.delete<S, E>(this.pathBuilder(path), params, axiosConfig).then((res) => redirectsOn401 ? redirectOn401(res) : res);
+  doDelete<P, S, E = S>(
+    path?: string | number,
+    params?: P,
+    axiosConfig?: AxiosRequestConfig,
+    redirectsOn401: boolean = true
+  ): Promise<ApiResponse<S, E>> {
+    return this._apisauceInstance
+      .delete<S, E>(this.pathBuilder(path), params, axiosConfig)
+      .then((res) => (redirectsOn401 ? redirectOn401(res) : res));
   }
 
-  doPost<R, S, E = S>(path?: string | number, data?: R, axiosConfig?: AxiosRequestConfig, redirectsOn401: boolean = true): Promise<ApiResponse<S, E>> {
-    return this._apisauceInstance.post<S, E>(this.pathBuilder(path), data, axiosConfig).then((res) => redirectsOn401 ? redirectOn401(res) : res);
+  doPost<R, S, E = S>(
+    path?: string | number,
+    data?: R,
+    axiosConfig?: AxiosRequestConfig,
+    redirectsOn401: boolean = true
+  ): Promise<ApiResponse<S, E>> {
+    return this._apisauceInstance
+      .post<S, E>(this.pathBuilder(path), data, axiosConfig)
+      .then((res) => (redirectsOn401 ? redirectOn401(res) : res));
   }
 
-  doPut<R, S, E = S>(path?: string | number, data?: R, axiosConfig?: AxiosRequestConfig, redirectsOn401: boolean = true): Promise<ApiResponse<S, E>> {
-    return this._apisauceInstance.put<S, E>(this.pathBuilder(path), data, axiosConfig).then((res) => redirectsOn401 ? redirectOn401(res) : res);
+  doPut<R, S, E = S>(
+    path?: string | number,
+    data?: R,
+    axiosConfig?: AxiosRequestConfig,
+    redirectsOn401: boolean = true
+  ): Promise<ApiResponse<S, E>> {
+    return this._apisauceInstance
+      .put<S, E>(this.pathBuilder(path), data, axiosConfig)
+      .then((res) => (redirectsOn401 ? redirectOn401(res) : res));
   }
 
-  doPatch<R, S, E = S>(path?: string | number, data?: R, axiosConfig?: AxiosRequestConfig, redirectsOn401: boolean = true): Promise<ApiResponse<S, E>> {
-    return this._apisauceInstance.patch<S, E>(this.pathBuilder(path), data, axiosConfig).then((res) => redirectsOn401 ? redirectOn401(res) : res);
+  doPatch<R, S, E = S>(
+    path?: string | number,
+    data?: R,
+    axiosConfig?: AxiosRequestConfig,
+    redirectsOn401: boolean = true
+  ): Promise<ApiResponse<S, E>> {
+    return this._apisauceInstance
+      .patch<S, E>(this.pathBuilder(path), data, axiosConfig)
+      .then((res) => (redirectsOn401 ? redirectOn401(res) : res));
   }
 }
 
@@ -78,7 +112,11 @@ export class RestfulResource extends AbstractHttpResource implements RestfulReso
     return this.doPut<R, S, E>(id, data, axiosConfig);
   }
 
-  putForm<S, E, R = FormData>(path: string | number, data: R, axiosConfig?: AxiosRequestConfig): Promise<ApiResponse<S, E>> {
+  putForm<S, E, R = FormData>(
+    path: string | number,
+    data: R,
+    axiosConfig?: AxiosRequestConfig
+  ): Promise<ApiResponse<S, E>> {
     const finalConfig: AxiosRequestConfig = {
       ...axiosConfig,
       headers: {

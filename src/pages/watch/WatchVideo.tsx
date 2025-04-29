@@ -14,15 +14,7 @@ import UpdateVideoModal from '@components/UpdateVideoModal';
 import Skeleton from '@skeletons/WatchVideoSkeleton';
 
 // reducers and others
-import {
-  changeSubscriptionState,
-  clearChannel,
-  clearVideoState,
-  getChannel,
-  getRecommendation,
-  getVideo,
-  handleReaction, videoSliceActions,
-} from '@reducers';
+import { changeSubscriptionState, channelActions, getChannel, getRecommendation, videoSliceActions } from '@reducers';
 import { timeSince } from '@utils';
 import type { RootDispatch, RootState } from '@redux-store';
 import {
@@ -44,7 +36,6 @@ import useVideoPlayerStore from '@store/video-player-store.ts';
 import videoResource from '@api/videoResource.ts';
 import watchHistoryResource from '@api/watchHistoryResource.ts';
 import { ROUTES } from '@constants';
-import RectangleVideoCard from '@components/RectangleVideoCard.tsx';
 import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Icon } from '@mui/material';
 import { toast } from 'react-toastify';
 import RecommendedVideoCard from '@pages/watch/RecommendedVideoCard.tsx';
@@ -70,7 +61,7 @@ const MoreVideoOptions: React.FC<MoreVideoOptions> = ({ video, usesVerticalIcon 
   const [showsDeletionConfirmation, setShowsDeletionConfirmation] = useState<boolean>(false);
   const moreIconRef = useRef<SVGSVGElement>();
   const actionListElement = useRef<HTMLDivElement>();
-  const MoreIcon = useMemo(() => usesVerticalIcon ? MoreVertRoundedIcon : MoreHorizRoundedIcon, [usesVerticalIcon]);
+  const MoreIcon = useMemo(() => (usesVerticalIcon ? MoreVertRoundedIcon : MoreHorizRoundedIcon), [usesVerticalIcon]);
   const navigate = useNavigate();
 
   const handleOpenCloseUpdateModal = useCallback(() => {
@@ -147,8 +138,11 @@ const MoreVideoOptions: React.FC<MoreVideoOptions> = ({ video, usesVerticalIcon 
       {showsMoreActions && (
         <div ref={actionListElement} className="absolute right-0 w-32 py-2 box-border rounded-sm bg-[#202020]">
           {actions.map((element, index) => (
-            <div key={index} onClick={element.action}
-                 className="flex px-2 bg-[#202020] hover:bg-[#383838] cursor-pointer items-center space-x-2">
+            <div
+              key={index}
+              onClick={element.action}
+              className="flex px-2 bg-[#202020] hover:bg-[#383838] cursor-pointer items-center space-x-2"
+            >
               {element.IconComponent && <Icon component={element.IconComponent} />}
               <span>{element.name}</span>
             </div>
@@ -174,10 +168,10 @@ const MoreVideoOptions: React.FC<MoreVideoOptions> = ({ video, usesVerticalIcon 
           </DialogContentText>
         </DialogContent>
         <DialogActions className="bg-[#202020]">
-          <Button onClick={handleOpenCloseDeletionConfirmation} autoFocus className="bg-[#383838]">Cancel</Button>
-          <Button onClick={handleDelete}>
-            Delete
+          <Button onClick={handleOpenCloseDeletionConfirmation} autoFocus className="bg-[#383838]">
+            Cancel
           </Button>
+          <Button onClick={handleDelete}>Delete</Button>
         </DialogActions>
       </Dialog>
     </div>
@@ -187,116 +181,116 @@ const MoreVideoOptions: React.FC<MoreVideoOptions> = ({ video, usesVerticalIcon 
 type Wrapper = StyledComponentProps & {
   filledLike: boolean;
   filledDislike: boolean;
-}
+};
 
 type SubWrapper = {
   theme: { blue: string };
-}
+};
 
 const Wrapper = styled.div<Wrapper>`
-    display: grid;
-    grid-template-columns: 70% 1fr;
-    grid-gap: 2rem;
-    padding: 1.3rem;
-    padding-bottom: 7rem;
+  display: grid;
+  grid-template-columns: 70% 1fr;
+  grid-gap: 2rem;
+  padding: 1.3rem;
+  padding-bottom: 7rem;
 
-    .video-container .video-info {
-        margin-top: 1rem;
-        margin-bottom: 1rem;
-    }
+  .video-container .video-info {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
 
-    //.video-info {
-    //    display: flex;
-    //    justify-content: space-between;
-    //}
+  //.video-info {
+  //    display: flex;
+  //    justify-content: space-between;
+  //}
 
-    .video-info span {
-        color: ${(props) => props.theme.secondaryColor};
-    }
+  .video-info span {
+    color: ${(props) => props.theme.secondaryColor};
+  }
 
-    .channel-info-flex {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+  .channel-info-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 
-    .video-info-stats {
-        display: flex;
-        align-items: center;
-    }
+  .video-info-stats {
+    display: flex;
+    align-items: center;
+  }
 
-    .video-info-stats div {
-        margin-left: 6rem;
-        position: relative;
-        top: -2px;
-    }
+  .video-info-stats div {
+    margin-left: 6rem;
+    position: relative;
+    top: -2px;
+  }
 
-    .channel-info-flex button {
-        font-size: 0.9rem;
-    }
+  .channel-info-flex button {
+    font-size: 0.9rem;
+  }
 
-    .channel-info-description {
-        padding-top: 1rem;
-        border-bottom: 1px solid ${(props) => props.theme.darkGrey};
-        border-top: 1px solid ${(props) => props.theme.darkGrey};
-    }
+  .channel-info-description {
+    padding-top: 1rem;
+    border-bottom: 1px solid ${(props) => props.theme.darkGrey};
+    border-top: 1px solid ${(props) => props.theme.darkGrey};
+  }
 
-    .channel-info-description p {
-        font-size: 0.9rem;
-        padding: 1rem 0;
-    }
+  .channel-info-description p {
+    font-size: 0.9rem;
+    padding: 1rem 0;
+  }
 
-    .related-videos img {
-        height: 140px;
-    }
+  .related-videos img {
+    height: 140px;
+  }
 
-    svg {
-        fill: ${(props) => props.theme.darkGrey};
-    }
+  svg {
+    fill: ${(props) => props.theme.darkGrey};
+  }
 
-    ${(props) =>
-            props.filledLike &&
-            css`
-                .like svg {
-                    fill: ${(props: SubWrapper) => props.theme.blue};
-                }
-            `}
+  ${(props) =>
+    props.filledLike &&
+    css`
+      .like svg {
+        fill: ${(props: SubWrapper) => props.theme.blue};
+      }
+    `}
 
-    ${(props) =>
-            props.filledDislike &&
-            css`
-                .dislike svg {
-                    fill: ${(props: SubWrapper) => props.theme.blue};
-                }
-            `} @media screen and (
+  ${(props) =>
+    props.filledDislike &&
+    css`
+      .dislike svg {
+        fill: ${(props: SubWrapper) => props.theme.blue};
+      }
+    `} @media screen and (
     max-width: 930px) {
     grid-template-columns: 90%;
 
     .related-videos {
-        display: none;
+      display: none;
     }
-}
+  }
 
-    @media screen and (max-width: 930px) {
-        grid-template-columns: 1fr;
-    }
+  @media screen and (max-width: 930px) {
+    grid-template-columns: 1fr;
+  }
 
-    @media screen and (max-width: 425px) {
-        .video-info-stats div {
-            margin-left: 1rem;
-        }
+  @media screen and (max-width: 425px) {
+    .video-info-stats div {
+      margin-left: 1rem;
     }
+  }
 `;
 
 const WatchVideo = () => {
-  const { videoId, pos/*number*/ } = useParams();
+  const { videoId, pos /*number*/ } = useParams();
 
   const dispatch = useDispatch<RootDispatch>();
   const { status: videoFetchingStatus, data: video } = useSelector<RootState, VideoState>((state) => state.video);
   const { status: channelStateStatus, data: channel } = useSelector<RootState, ChannelState>((state) => state.channel);
-  const {
-    isFetching: recommendationFetching, videos: next,
-  } = useSelector<RootState, RecommendationListState>((state) => state.recommendation);
+  const { isFetching: recommendationFetching, videos: next } = useSelector<RootState, RecommendationListState>(
+    (state) => state.recommendation
+  );
   const { playerRef, duration } = useVideoPlayerStore();
 
   /**
@@ -308,10 +302,17 @@ const WatchVideo = () => {
    */
   const [totalWatchTime, setTotalWatchTime] = useState<number>(0);
   const hasLoggedIntoWatchHistory = useRef<boolean>(false);
-  const hasReachedMinimumViewTime: boolean = useMemo(() => totalWatchTime >= (duration * 2 / 5), [duration, totalWatchTime]);
+  const hasReachedMinimumViewTime: boolean = useMemo(
+    () => totalWatchTime >= (duration * 2) / 5,
+    [duration, totalWatchTime]
+  );
   const description = useMemo<string>(
-    () => video?.description?.replaceAll(/#\w+/g, (old) => `<a href="${ROUTES.SEARCH}?q=%23${old.substring(1)}" class="underline text-blue-600">${old}</a>`),
-    [video?.description],
+    () =>
+      video?.description?.replaceAll(
+        /#\w+/g,
+        (old) => `<a href="${ROUTES.SEARCH}?q=%23${old.substring(1)}" class="underline text-blue-600">${old}</a>`
+      ),
+    [video?.description]
   );
 
   const handleLike = useCallback(() => {
@@ -341,7 +342,7 @@ const WatchVideo = () => {
     }
 
     return () => {
-      dispatch(clearChannel());
+      dispatch(channelActions.clearChannel());
     };
   }, [dispatch, video.channelId]);
 
@@ -350,10 +351,12 @@ const WatchVideo = () => {
       const playerElement = playerRef.current;
       // TODO: find ways to frequently update pausePosition
       const updateHistory = (event: Event) => {
-        watchHistoryResource.log({
-          videoId,
-          pausePosition: Math.floor(playerElement.currentTime),
-        }).then(() => console.log('updated history'));
+        watchHistoryResource
+          .log({
+            videoId,
+            pausePosition: Math.floor(playerElement.currentTime),
+          })
+          .then(() => console.log('updated history'));
       };
       const startCounter = (event: Event) => !hasReachedMinimumViewTime && setIsCountingWatchTime(true);
       const pauseCounter = (event: Event) => setIsCountingWatchTime(false);
@@ -405,7 +408,9 @@ const WatchVideo = () => {
   useEffect(() => {
     if (isCountingWatchTime && hasReachedMinimumViewTime) {
       setIsCountingWatchTime(false);
-      videoResource.update(videoId, { updateType: VideoUpdateType.INCREASE_VIEW }).then(() => console.log('updated view'));
+      videoResource
+        .update(videoId, { updateType: VideoUpdateType.INCREASE_VIEW })
+        .then(() => console.log('updated view'));
     }
   }, [isCountingWatchTime, hasReachedMinimumViewTime, videoId]);
 
@@ -415,22 +420,17 @@ const WatchVideo = () => {
 
   if (videoFetchingStatus == VideoStateStatus.FETCHING_FAILED && !video) {
     return (
-      <NoResults
-        title="Page not found"
-        text="The page you are looking for is not found or it may have been removed"
-      />
+      <NoResults title="Page not found" text="The page you are looking for is not found or it may have been removed" />
     );
   }
 
   return (
-    <Wrapper
-      filledLike={video && video.liked}
-      filledDislike={video && video.disliked}
-    >
+    <Wrapper filledLike={video && video.liked} filledDislike={video && video.disliked}>
       <div className="video-container">
-        {(video.status == VideoStatusEnum.READY) ? (
-          <div className="video">{videoFetchingStatus === VideoStateStatus.FETCHING_SUCCEEDED &&
-            <CustomVideoPlayer url={video.url} />}</div>
+        {video.status == VideoStatusEnum.READY ? (
+          <div className="video">
+            {videoFetchingStatus === VideoStateStatus.FETCHING_SUCCEEDED && <CustomVideoPlayer url={video.url} />}
+          </div>
         ) : (
           <p>Video is not ready. Open again later.</p>
         )}
@@ -440,17 +440,17 @@ const WatchVideo = () => {
             <h3>{video.title}</h3>
 
             <div className="video-info-stats">
-              <span>{video.viewCount} views&nbsp;•&nbsp;{timeSince(video.createdAt)} ago</span>
+              <span>
+                {video.viewCount} views&nbsp;•&nbsp;{timeSince(video.createdAt)} ago
+              </span>
             </div>
           </div>
           <div className="float-end flex items-center space-x-4">
             <p className="flex-row like">
-              <LikeIcon onClick={handleLike} />{' '}
-              <span>{video.likeCount}</span>
+              <LikeIcon onClick={handleLike} /> <span>{video.likeCount}</span>
             </p>
             <p className="flex-row dislike">
-              <DislikeIcon onClick={handleDislike} />{' '}
-              <span>{video.dislikeCount}</span>
+              <DislikeIcon onClick={handleDislike} /> <span>{video.dislikeCount}</span>
             </p>
             <MoreVideoOptions video={video} />
           </div>
@@ -459,27 +459,22 @@ const WatchVideo = () => {
         <div className="channel-info-description">
           <div className="channel-info-flex">
             <div className="channel-info flex-row">
-              <img
-                className="avatar md"
-                src={channel.avatar ?? defaultAvatar}
-                alt="channel avatar"
-              />
+              <img className="avatar md" src={channel.avatar ?? defaultAvatar} alt="channel avatar" />
               <div className="channel-info-meta">
                 <h4>
-                  <Link to={`/channel/${channel.pathname}`}>
-                    {channel.name}
-                  </Link>
+                  <Link to={`/channel/${channel.pathname}`}>{channel.name}</Link>
                 </h4>
-                <span className="secondary small">
-                  {channel.subscriptionCount} subscribers
-                </span>
+                <span className="secondary small">{channel.subscriptionCount} subscribers</span>
               </div>
             </div>
-            {!channel.isOwned && (channel.subscribed ? (
-              <Button grey onClick={handleSubscribe}>Subscribed</Button>
-            ) : (
-              <Button onClick={handleSubscribe}>Subscribe</Button>
-            ))}
+            {!channel.isOwned &&
+              (channel.subscribed ? (
+                <Button grey onClick={handleSubscribe}>
+                  Subscribed
+                </Button>
+              ) : (
+                <Button onClick={handleSubscribe}>Subscribe</Button>
+              ))}
           </div>
           <p className="whitespace-pre-line" dangerouslySetInnerHTML={{ __html: description }}></p>
         </div>

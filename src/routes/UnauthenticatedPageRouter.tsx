@@ -12,7 +12,7 @@ import { NotFoundErrorPage } from '../pages';
 import Trending from '@pages/Trending.tsx';
 import LikedVideos from '@pages/LikedVideos.tsx';
 import Library from '@pages/Library.tsx';
-import WatchHistory from '@pages/WatchHistory.tsx';
+import WatchHistory from '@pages/watchhistory/WatchHistory.tsx';
 import SubscriptionsPage from '@pages/SubscriptionsPage.tsx';
 
 const UnauthenticatedPageRouter = createBrowserRouter([
@@ -81,7 +81,6 @@ const UnauthenticatedPageRouter = createBrowserRouter([
         Component: NotFoundErrorPage,
       },
     ],
-
   },
 ]);
 

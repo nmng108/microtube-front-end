@@ -1,14 +1,12 @@
-import React from "react";
-import { useDispatch } from "react-redux";
-import styled from "styled-components";
-import { Link } from "react-router";
-import Button from "../styles/Button";
+import React from 'react';
+import { useDispatch } from 'react-redux';
+import styled from 'styled-components';
+import { Link } from 'react-router';
+import Button from '../styles/Button';
 
 // reducers and utils
 import { addChannel, removeChannel } from '@reducers';
-import {
-  changeChannelSubscriptionStateInSearchResult,
-} from '@reducers/searchResult.ts';
+import { changeChannelSubscriptionStateInSearchResult } from '@reducers/searchResult.ts';
 // import { toggleSubscribeChannelRecommendation } from "../reducers/channelRecommendation";
 import { ChannelStateData } from '@models/channel.ts';
 import { RootDispatch } from '@redux-store.ts';
@@ -22,6 +20,7 @@ const Wrapper = styled.div`
 
   .avatar-channel {
     display: flex;
+    width: 70%;
     align-items: center;
   }
 
@@ -84,7 +83,7 @@ const Wrapper = styled.div`
 type Props = {
   channel: ChannelStateData;
   search?: boolean;
-}
+};
 
 const ChannelCard: React.FC<Props> = ({ search, channel }) => {
   const dispatch = useDispatch<RootDispatch>();
@@ -116,36 +115,31 @@ const ChannelCard: React.FC<Props> = ({ search, channel }) => {
       <Link to={`/channel/${channel.id}`} className="avatar-channel">
         <img src={channel.avatar || defaultAvatar} alt="avatar" />
 
-        <div className="channel-info-meta">
+        <div className="channel-info-meta w-2/3">
           <h3>{channel.name}</h3>
 
           <p className="secondary">
-            <span>{channel.subscriptionCount} subscribers</span>{" "}
-            <span className="to-hide">•</span>{" "}
+            <span>{channel.subscriptionCount} subscribers</span> <span className="to-hide">•</span>{' '}
             <span className="to-hide">{channel.videoCount} videos</span>
           </p>
 
           {channel.description && (
             <p className="description secondary">
-              {channel.description?.length < 65
-                ? channel.description
-                : channel.description?.substring(0, 65)}
+              {channel.description?.length < 65 ? channel.description : `${channel.description?.substring(0, 65)}...`}
             </p>
           )}
         </div>
       </Link>
 
-      {!channel.isOwned && !channel.subscribed && (
-        <Button onClick={() => handleSubscribe()}>
-          Subscribe
-        </Button>
-      )}
+      <div className="w-[28%] flex justify-end">
+        {!channel.isOwned && !channel.subscribed && <Button onClick={() => handleSubscribe()}>Subscribe</Button>}
 
-      {!channel.isOwned && channel.subscribed && (
-        <Button grey onClick={() => handleUnsubscribe()}>
-          Subscribed
-        </Button>
-      )}
+        {!channel.isOwned && channel.subscribed && (
+          <Button grey onClick={() => handleUnsubscribe()}>
+            Subscribed
+          </Button>
+        )}
+      </div>
     </Wrapper>
   );
 };

@@ -3,12 +3,13 @@ const setItem = (key: string, value: string) => {
 };
 
 const setObjectInLocalStorage = (key: string, value: object) => {
-  localStorage.setItem(key, JSON.stringify(value))
-}
+  localStorage.setItem(key, JSON.stringify(value));
+};
 
 const getItem = (key: string) => {
-  let val = localStorage.getItem(key);
-  let parsedVal = val ? JSON.parse(val) : null;
+  const val = localStorage.getItem(key);
+  const parsedVal = val ? JSON.parse(val) : null;
+
   return parsedVal;
 };
 

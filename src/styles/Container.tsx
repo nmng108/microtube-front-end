@@ -1,8 +1,8 @@
-import styled from "styled-components";
+import styled from 'styled-components';
 
 const Container = styled.div`
-  margin-top: 60px;
-  margin-left: 240px;
+  margin-top: 4rem;
+  margin-left: 15rem;
 
   @media screen and (max-width: 1093px) {
     margin-left: 0;

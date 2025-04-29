@@ -1,6 +1,12 @@
 name: microtube
 services:
-  dev-app:
+  fe:
+    image: ${FRONT_END_IMAGE:-registry.local/microtube/front-end:latest}
+    container_name: microtube-frontend
+    ports:
+      - 80:80
+      - 443:443
+  dev-fe:
     build:
       context: .
       target: development
@@ -14,9 +20,3 @@ services:
       watch:
         - action: rebuild
           path: .
-  app:
-    image: localhost/image-name
-    container_name: microtube-frontend
-    ports:
-      - 80:80
-      - 443:443

@@ -22,7 +22,7 @@ export const getChannel = createAsyncThunk<ChannelStateData, number | string, Ba
 
     if (ok) {
       const newChannelState = toChannelStateData(data.data);
-      newChannelState.isOwned = (newChannelState.userId === getState().user.data.id);
+      newChannelState.isOwned = newChannelState.userId === getState().user.data.id;
 
       dispatch(fetchChannelVideos(newChannelState.id));
 
@@ -41,21 +41,25 @@ export const getChannel = createAsyncThunk<ChannelStateData, number | string, Ba
     }
 
     throw problem;
-  },
+  }
 );
 
 export const updateChannel = createAsyncThunk<ChannelStateData, UpdateChannelDTO, BaseAsyncThunkConfig>(
   'channel/update',
-  async (requestBody: UpdateChannelDTO, thunk): Promise<ChannelStateData> => {
-    const { getState } = thunk;
-    const { ok, problem, data } = await channelResource.update(getState().channel.data.id, requestBody);
+  async (requestBody: UpdateChannelDTO, { getState }): Promise<ChannelStateData> => {
+    const channel = getState().channel.data;
+    const { ok, problem, data } = await channelResource.update(channel.id, requestBody);
 
     if (ok && data.status == 0) {
       // update API should respond the entity info as detail as the get API does
-      const updatedChannelState = toChannelStateData(data.data);
-      updatedChannelState.isOwned = (updatedChannelState.userId === getState().user.data.id);
+      const responseDTO = data.data;
 
-      return updatedChannelState;
+      return {
+        ...channel,
+        name: responseDTO.name,
+        pathname: responseDTO.pathname,
+        description: responseDTO.description,
+      };
     }
 
     console.error(`Error update channel. Reason: ${problem}`);
@@ -72,19 +76,16 @@ export const updateChannel = createAsyncThunk<ChannelStateData, UpdateChannelDTO
     }
 
     throw problem;
-  },
+  }
 );
 
 export const uploadChannelAvatar = createAsyncThunk<string, File, BaseAsyncThunkConfig>(
   'channel/avatar/upload',
   async (file: File, thunk): Promise<string> => {
     const { getState } = thunk;
-    const { ok, problem, data } = await uploadImmediate(
-      file,
-      (formData, config) => {
-        return channelResource.uploadAvatar(getState().channel.data.id, formData, config);
-      },
-    );
+    const { ok, problem, data } = await uploadImmediate(file, (formData, config) => {
+      return channelResource.uploadAvatar(getState().channel.data.id, formData, config);
+    });
 
     if (ok) return data.data;
 
@@ -102,7 +103,7 @@ export const uploadChannelAvatar = createAsyncThunk<string, File, BaseAsyncThunk
     }
 
     throw problem;
-  },
+  }
 );
 
 export const fetchChannelVideos = createAsyncThunk<Array<ConciseVideoData>, number, BaseAsyncThunkConfig>(
@@ -128,7 +129,7 @@ export const fetchChannelVideos = createAsyncThunk<Array<ConciseVideoData>, numb
     }
 
     throw problem;
-  },
+  }
 );
 
 export const changeSubscriptionState = createAsyncThunk<void, void, BaseAsyncThunkConfig>(
@@ -160,7 +161,7 @@ export const changeSubscriptionState = createAsyncThunk<void, void, BaseAsyncThu
     }
 
     throw problem;
-  },
+  }
 );
 
 const initialState: ChannelState = {
@@ -183,6 +184,9 @@ const channelSlice = createSlice({
       state = initialState;
       // state.status = initialState.status;
       // state.data = initialState.data;
+    },
+    clearStatus(state) {
+      state.status = ChannelStateStatus.NONE;
     },
   },
   extraReducers: (builder) => {
@@ -208,8 +212,8 @@ const channelSlice = createSlice({
     });
     builder.addCase(fetchChannelVideos.rejected, (state, action) => {
       state.status = ChannelStateStatus.FETCHING_VIDEOS_FAILED;
-      console.error('Error fetching channel\'s videos.', action);
-      state.problemMessage = 'Cannot fetch channel\'s videos';
+      console.error("Error fetching channel's videos.", action);
+      state.problemMessage = "Cannot fetch channel's videos";
     });
 
     builder.addCase(updateChannel.pending, (state) => {
@@ -241,12 +245,6 @@ const channelSlice = createSlice({
   },
 });
 
-const {
-  clearChannel,
-} = channelSlice.actions;
-
-export {
-  clearChannel,
-};
+export const channelActions = channelSlice.actions;
 
 export default channelSlice.reducer;
